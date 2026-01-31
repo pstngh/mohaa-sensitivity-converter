@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: rgba(30, 30, 45, 1);
             min-height: 100vh;
             color: #e0e0e0;
             padding: 20px;
@@ -55,7 +55,7 @@
         }
 
         .game-panel {
-            background: rgba(30, 30, 45, 0.9);
+            background: rgba(20, 20, 35, 0.9);
             border-radius: 12px;
             padding: 25px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -103,6 +103,10 @@
 
         .input-group {
             margin-bottom: 18px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
         }
 
         .input-group label {
@@ -167,42 +171,19 @@
             fill: white;
         }
 
-        .results-panel {
-            background: rgba(30, 30, 45, 0.9);
-            border-radius: 12px;
-            padding: 25px;
+        .results-section {
             margin-top: 25px;
+            padding: 20px;
+            background: rgba(20, 20, 35, 0.9);
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .results-title {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .results-title::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 20px;
-            background: linear-gradient(135deg, #4a9eff, #00ff88);
-            border-radius: 2px;
         }
 
         .result-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .result-row:last-child {
-            border-bottom: none;
+            margin-bottom: 15px;
         }
 
         .result-label {
@@ -213,24 +194,21 @@
         .result-value {
             font-weight: 600;
             font-size: 1rem;
-        }
-
-        .result-value.highlight {
             color: #4a9eff;
-        }
-
-        .result-value.success {
-            color: #00ff88;
         }
 
         .command-box {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 8px;
             padding: 15px;
-            margin-top: 15px;
+            margin-top: 10px;
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
             position: relative;
+        }
+
+        .command-box:first-of-type {
+            margin-top: 0;
         }
 
         .command-box code {
@@ -263,7 +241,7 @@
         }
 
         .info-panel {
-            background: rgba(30, 30, 45, 0.9);
+            background: rgba(20, 20, 35, 0.9);
             border-radius: 12px;
             padding: 25px;
             margin-top: 25px;
@@ -349,20 +327,9 @@
                     <input type="number" id="source-dpi" value="800" step="50" min="100">
                 </div>
 
-                <div class="input-row">
-                    <div class="input-group">
-                        <label>Resolution Width</label>
-                        <input type="number" id="source-res-w" value="800" step="1" min="640">
-                    </div>
-                    <div class="input-group">
-                        <label>Height</label>
-                        <input type="number" id="source-res-h" value="600" step="1" min="480">
-                    </div>
-                </div>
-
-                <div class="input-group">
+                <div class="input-group" id="source-fov-group">
                     <label>FOV</label>
-                    <input type="number" id="source-fov" value="80" step="1" min="60" max="120">
+                    <input type="number" id="source-fov" value="80" step="1" min="40" max="120">
                 </div>
             </div>
 
@@ -393,49 +360,26 @@
                     <input type="number" id="target-dpi" value="800" step="50" min="100">
                 </div>
 
-                <div class="input-row">
-                    <div class="input-group">
-                        <label>Resolution Width</label>
-                        <input type="number" id="target-res-w" value="800" step="1" min="640">
-                    </div>
-                    <div class="input-group">
-                        <label>Height</label>
-                        <input type="number" id="target-res-h" value="600" step="1" min="480">
-                    </div>
-                </div>
-
-                <div class="input-group">
+                <div class="input-group" id="target-fov-group" style="display: none;">
                     <label>FOV</label>
-                    <input type="number" id="target-fov" value="90" step="1" min="60" max="120">
+                    <input type="number" id="target-fov" value="80" step="1" min="40" max="120">
                 </div>
             </div>
         </div>
 
-        <!-- Results Panel -->
-        <div class="results-panel">
-            <div class="results-title">Conversion Results</div>
-
+        <!-- Results Section -->
+        <div class="results-section">
             <div class="result-row">
-                <span class="result-label">Source 360° Distance</span>
-                <span class="result-value highlight" id="source-360">60.5376 cm</span>
+                <span class="result-label">360° Distance</span>
+                <span class="result-value" id="cm360">60.54 cm</span>
             </div>
 
-            <div class="result-row">
-                <span class="result-label">Target 360° Distance</span>
-                <span class="result-value highlight" id="target-360">60.4123 cm</span>
-            </div>
-
-            <div class="result-row">
-                <span class="result-label">Discrepancy</span>
-                <span class="result-value success" id="discrepancy">-0.21% (-0.13 cm)</span>
-            </div>
-
-            <div class="command-box" id="mohaa-command" style="display: block;">
+            <div class="command-box" id="mohaa-command">
                 <span class="command-label">MOHAA:</span> <code id="command-text">sensitivity "1"</code>
                 <button class="copy-btn" onclick="copyCommand()">Copy</button>
             </div>
 
-            <div class="command-box" id="cs2-command" style="display: block; margin-top: 10px;">
+            <div class="command-box" id="cs2-command">
                 <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "0.86"</code>
                 <button class="copy-btn" onclick="copyCs2Command()">Copy</button>
             </div>
@@ -448,10 +392,9 @@
             <p><strong>Game-specific details:</strong></p>
             <ul>
                 <li><strong>MOHAA:</strong> Quake 3 engine - yaw scales with FOV (higher FOV = faster turning)</li>
-                <li><strong>CS2:</strong> Uses fixed yaw value of 0.022 (Source 2 engine)</li>
-                <li>Formula: cm/360° = (360 × 2.54) ÷ (DPI × sensitivity × yaw)</li>
+                <li><strong>CS2:</strong> Uses fixed yaw value of 0.022 at FOV 90</li>
             </ul>
-            <p style="margin-top: 15px;"><strong>Note:</strong> MOHAA sensitivity is FOV-dependent, so changing your FOV will affect the converted sensitivity. Make sure to enter your actual in-game FOV for accurate conversion.</p>
+            <p style="margin-top: 15px;"><strong>Note:</strong> MOHAA sensitivity is FOV-dependent, so make sure to enter your actual in-game FOV for accurate conversion.</p>
         </div>
 
         <footer>
@@ -483,19 +426,15 @@
         // DOM Elements
         const sourceSens = document.getElementById('source-sens');
         const sourceDpi = document.getElementById('source-dpi');
-        const sourceResW = document.getElementById('source-res-w');
-        const sourceResH = document.getElementById('source-res-h');
         const sourceFov = document.getElementById('source-fov');
+        const sourceFovGroup = document.getElementById('source-fov-group');
 
         const targetSens = document.getElementById('target-sens');
         const targetDpi = document.getElementById('target-dpi');
-        const targetResW = document.getElementById('target-res-w');
-        const targetResH = document.getElementById('target-res-h');
         const targetFov = document.getElementById('target-fov');
+        const targetFovGroup = document.getElementById('target-fov-group');
 
-        const source360 = document.getElementById('source-360');
-        const target360 = document.getElementById('target-360');
-        const discrepancy = document.getElementById('discrepancy');
+        const cm360Display = document.getElementById('cm360');
         const direction = document.getElementById('direction');
         const commandText = document.getElementById('command-text');
         const cs2CommandText = document.getElementById('cs2-command-text');
@@ -521,7 +460,7 @@
             const srcDpi = parseFloat(sourceDpi.value) || 800;
             const srcFov = parseFloat(sourceFov.value) || 90;
             const tgtDpi = parseFloat(targetDpi.value) || 800;
-            const tgtFov = parseFloat(targetFov.value) || 90;
+            const tgtFov = parseFloat(targetFov.value) || 80;
 
             // Get yaw values based on direction and FOV
             let srcYaw, tgtYaw;
@@ -539,21 +478,9 @@
             // Calculate target sensitivity to match cm/360
             const tgtSens = calculateSensFromCm360(srcCm360, tgtDpi, tgtYaw);
 
-            // Calculate actual target cm/360 (for discrepancy check)
-            const tgtCm360 = calculateCm360(tgtSens, tgtDpi, tgtYaw);
-
-            // Calculate discrepancy
-            const diff = tgtCm360 - srcCm360;
-            const diffPercent = ((tgtCm360 - srcCm360) / srcCm360) * 100;
-
             // Update UI - round to 2 decimal places for display
             targetSens.value = tgtSens.toFixed(2);
-            source360.textContent = srcCm360.toFixed(4) + ' cm';
-            target360.textContent = tgtCm360.toFixed(4) + ' cm';
-
-            // Format discrepancy
-            const sign = diff >= 0 ? '+' : '';
-            discrepancy.textContent = `${sign}${diffPercent.toFixed(2)}% (${sign}${diff.toFixed(4)} cm)`;
+            cm360Display.textContent = srcCm360.toFixed(2) + ' cm';
 
             // Update commands - MOHAA command in first box, CS2 in second
             if (isMohaaSource) {
@@ -593,8 +520,9 @@
                         <div class="game-subtitle">Target Game</div>
                     </div>
                 `;
+                sourceFovGroup.style.display = 'block';
+                targetFovGroup.style.display = 'none';
                 sourceFov.value = 80;
-                targetFov.value = 90;
             } else {
                 sourceHeader.innerHTML = `
                     <div class="game-icon cs2-icon">CS2</div>
@@ -610,12 +538,13 @@
                         <div class="game-subtitle">Target Game</div>
                     </div>
                 `;
-                sourceFov.value = 90;
+                sourceFovGroup.style.display = 'none';
+                targetFovGroup.style.display = 'block';
                 targetFov.value = 80;
             }
 
             // Reset sensitivity to default for new source game
-            sourceSens.value = isMohaaSource ? 1 : 0.86;
+            sourceSens.value = isMohaaSource ? 1 : 1;
 
             convert();
         }
@@ -639,11 +568,7 @@
         sourceSens.addEventListener('input', convert);
         sourceDpi.addEventListener('input', convert);
         targetDpi.addEventListener('input', convert);
-        sourceResW.addEventListener('input', convert);
-        sourceResH.addEventListener('input', convert);
         sourceFov.addEventListener('input', convert);
-        targetResW.addEventListener('input', convert);
-        targetResH.addEventListener('input', convert);
         targetFov.addEventListener('input', convert);
 
         document.getElementById('swap-btn').addEventListener('click', swapGames);
