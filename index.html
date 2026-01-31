@@ -441,11 +441,11 @@
             <p>This converter matches your 360° turn distance between games. The 360° distance is how far you need to move your mouse to complete a full 360° turn in-game.</p>
             <p><strong>Game-specific details:</strong></p>
             <ul>
-                <li><strong>MOHAA:</strong> Uses yaw value of ~0.01888 (Quake 3 engine based)</li>
-                <li><strong>CS2:</strong> Uses yaw value of 0.022 (Source 2 engine)</li>
+                <li><strong>MOHAA:</strong> Quake 3 engine - yaw scales with FOV (higher FOV = faster turning)</li>
+                <li><strong>CS2:</strong> Uses fixed yaw value of 0.022 (Source 2 engine)</li>
                 <li>Formula: cm/360° = (360 × 2.54) ÷ (DPI × sensitivity × yaw)</li>
             </ul>
-            <p style="margin-top: 15px;"><strong>Note:</strong> Resolution affects the aspect ratio but not the sensitivity calculation. FOV is shown for reference but the conversion is based on matching physical mouse movement distance.</p>
+            <p style="margin-top: 15px;"><strong>Note:</strong> MOHAA sensitivity is FOV-dependent, so changing your FOV will affect the converted sensitivity. Make sure to enter your actual in-game FOV for accurate conversion.</p>
         </div>
 
         <footer>
@@ -454,9 +454,18 @@
     </div>
 
     <script>
-        // Game yaw values (degrees per mouse count)
-        const MOHAA_YAW = 0.01888;  // Derived from: 60.5376 cm @ sens 1, DPI 800
+        // Game yaw values
+        // CS2 uses fixed yaw of 0.022
         const CS2_YAW = 0.022;
+
+        // MOHAA (Quake 3 engine) yaw scales with FOV
+        // Derived from reference data:
+        // FOV 80, sens 1 -> 60.5376 cm/360 -> yaw = 0.01892
+        // FOV 100, sens 3 -> 15.5401 cm/360 -> yaw = 0.02449
+        // Linear interpolation: yaw = 0.01892 + (fov - 80) * 0.0002785
+        function getMohaaYaw(fov) {
+            return 0.01892 + (fov - 80) * 0.0002785;
+        }
 
         // State
         let isMohaaSource = true;
@@ -500,10 +509,19 @@
         function convert() {
             const srcSens = parseFloat(sourceSens.value) || 1;
             const srcDpi = parseFloat(sourceDpi.value) || 800;
+            const srcFov = parseFloat(sourceFov.value) || 90;
             const tgtDpi = parseFloat(targetDpi.value) || 800;
+            const tgtFov = parseFloat(targetFov.value) || 90;
 
-            const srcYaw = isMohaaSource ? MOHAA_YAW : CS2_YAW;
-            const tgtYaw = isMohaaSource ? CS2_YAW : MOHAA_YAW;
+            // Get yaw values based on direction and FOV
+            let srcYaw, tgtYaw;
+            if (isMohaaSource) {
+                srcYaw = getMohaaYaw(srcFov);
+                tgtYaw = CS2_YAW;
+            } else {
+                srcYaw = CS2_YAW;
+                tgtYaw = getMohaaYaw(tgtFov);
+            }
 
             // Calculate source cm/360
             const srcCm360 = calculateCm360(srcSens, srcDpi, srcYaw);
@@ -518,8 +536,8 @@
             const diff = tgtCm360 - srcCm360;
             const diffPercent = ((tgtCm360 - srcCm360) / srcCm360) * 100;
 
-            // Update UI
-            targetSens.value = tgtSens.toFixed(4);
+            // Update UI - round to 2 decimal places for display
+            targetSens.value = tgtSens.toFixed(2);
             source360.textContent = srcCm360.toFixed(4) + ' cm';
             target360.textContent = tgtCm360.toFixed(4) + ' cm';
 
@@ -530,11 +548,10 @@
             // Update commands
             if (isMohaaSource) {
                 commandText.textContent = `seta sensitivity "${srcSens}"`;
-                cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(4)}"`;
-                mohaaCommand.querySelector('.copy-btn').setAttribute('onclick', 'copyCommand()');
+                cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(2)}"`;
             } else {
                 commandText.textContent = `sensitivity "${srcSens}"`;
-                cs2CommandText.textContent = `seta sensitivity "${tgtSens.toFixed(4)}"`;
+                cs2CommandText.textContent = `seta sensitivity "${tgtSens.toFixed(2)}"`;
             }
         }
 
