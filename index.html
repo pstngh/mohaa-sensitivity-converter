@@ -414,10 +414,10 @@
             <p>This converter matches your 360° turn distance between games. The 360° distance is how far you need to move your mouse to complete a full 360° turn in-game.</p>
             <p><strong>Game-specific details:</strong></p>
             <ul>
-                <li><strong>MOHAA:</strong> Quake 3 engine - yaw scales with FOV (higher FOV = faster turning)</li>
+                <li><strong>MOHAA:</strong> Quake 3 engine - sensitivity scales with FOV and aspect ratio. Widescreen resolutions (16:9) result in slower sensitivity compared to 4:3.</li>
                 <li><strong>CS2:</strong> Uses fixed yaw value of 0.022 at FOV 90</li>
             </ul>
-            <p style="margin-top: 15px;"><strong>Note:</strong> MOHAA sensitivity is FOV-dependent, so make sure to enter your actual in-game FOV for accurate conversion.</p>
+            <p style="margin-top: 15px;"><strong>Note:</strong> Make sure to enter your actual MOHAA resolution and FOV for accurate conversion.</p>
         </div>
 
         <footer>
@@ -430,17 +430,29 @@
         // CS2 uses fixed yaw of 0.022
         const CS2_YAW = 0.022;
 
-        // MOHAA (Quake 3 engine) yaw scales with FOV
-        // Derived from reference data (quadratic fit):
-        // FOV 50: yaw = 0.01131 (from CS2 5.75 -> MOHAA 11.186)
-        // FOV 80: yaw = 0.01892 (from MOHAA 1 @ 60.5376 cm/360)
-        // FOV 100: yaw = 0.02449 (from MOHAA 3 @ 15.5401 cm/360)
-        // Quadratic formula: yaw = a*fov^2 + b*fov + c
-        function getMohaaYaw(fov) {
+        // MOHAA (Quake 3 engine) yaw scales with FOV and aspect ratio
+        // Unlike CS2, MOHAA doesn't adjust FOV for widescreen - it crops vertically
+        // This means sensitivity is slower at wider aspect ratios
+        //
+        // Base yaw derived from reference data at 4:3 (quadratic fit):
+        // FOV 50: yaw = 0.01131, FOV 80: yaw = 0.01892, FOV 100: yaw = 0.02449
+        //
+        // Aspect ratio scaling (derived from 800x600 vs 1920x1080 data):
+        // 800x600 (4:3): 60.5376 cm/360
+        // 1920x1080 (16:9): 77.1083 cm/360
+        // Factor = ((4/3) / aspect) ^ 0.84
+        function getMohaaYaw(fov, width, height) {
             const a = 4.97e-7;
             const b = 1.891e-4;
             const c = 6.12e-4;
-            return a * fov * fov + b * fov + c;
+            const baseYaw = a * fov * fov + b * fov + c;
+
+            // Aspect ratio correction (base is 4:3)
+            const currentAspect = width / height;
+            const baseAspect = 4 / 3;
+            const aspectFactor = Math.pow(baseAspect / currentAspect, 0.84);
+
+            return baseYaw * aspectFactor;
         }
 
         // State
@@ -449,11 +461,15 @@
         // DOM Elements
         const sourceSens = document.getElementById('source-sens');
         const sourceDpi = document.getElementById('source-dpi');
+        const sourceResW = document.getElementById('source-res-w');
+        const sourceResH = document.getElementById('source-res-h');
         const sourceFov = document.getElementById('source-fov');
         const sourceFovGroup = document.getElementById('source-fov-group');
 
         const targetSens = document.getElementById('target-sens');
         const targetDpi = document.getElementById('target-dpi');
+        const targetResW = document.getElementById('target-res-w');
+        const targetResH = document.getElementById('target-res-h');
         const targetFov = document.getElementById('target-fov');
         const targetFovGroup = document.getElementById('target-fov-group');
 
@@ -481,18 +497,22 @@
         function convert() {
             const srcSens = parseFloat(sourceSens.value) || 1;
             const srcDpi = parseFloat(sourceDpi.value) || 800;
-            const srcFov = parseFloat(sourceFov.value) || 90;
+            const srcResW = parseFloat(sourceResW.value) || 1024;
+            const srcResH = parseFloat(sourceResH.value) || 768;
+            const srcFov = parseFloat(sourceFov.value) || 80;
             const tgtDpi = parseFloat(targetDpi.value) || 800;
+            const tgtResW = parseFloat(targetResW.value) || 1024;
+            const tgtResH = parseFloat(targetResH.value) || 768;
             const tgtFov = parseFloat(targetFov.value) || 80;
 
-            // Get yaw values based on direction and FOV
+            // Get yaw values based on direction, FOV, and resolution (for MOHAA)
             let srcYaw, tgtYaw;
             if (isMohaaSource) {
-                srcYaw = getMohaaYaw(srcFov);
+                srcYaw = getMohaaYaw(srcFov, srcResW, srcResH);
                 tgtYaw = CS2_YAW;
             } else {
                 srcYaw = CS2_YAW;
-                tgtYaw = getMohaaYaw(tgtFov);
+                tgtYaw = getMohaaYaw(tgtFov, tgtResW, tgtResH);
             }
 
             // Calculate source cm/360
@@ -590,7 +610,11 @@
         // Event listeners
         sourceSens.addEventListener('input', convert);
         sourceDpi.addEventListener('input', convert);
+        sourceResW.addEventListener('input', convert);
+        sourceResH.addEventListener('input', convert);
         targetDpi.addEventListener('input', convert);
+        targetResW.addEventListener('input', convert);
+        targetResH.addEventListener('input', convert);
         sourceFov.addEventListener('input', convert);
         targetFov.addEventListener('input', convert);
 
