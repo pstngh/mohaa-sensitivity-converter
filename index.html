@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOHAA ↔ CS2 Sensitivity Converter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #fff;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .converter-wrapper {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .converter-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .swap-btn {
+                order: -1;
+            }
+        }
+
+        .game-panel {
+            background: rgba(30, 30, 45, 0.9);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .mohaa-icon {
+            background: linear-gradient(135deg, #8B4513, #654321);
+            color: #ffd700;
+        }
+
+        .cs2-icon {
+            background: linear-gradient(135deg, #ff6b00, #ff9500);
+            color: #fff;
+        }
+
+        .game-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .game-subtitle {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+        }
+
+        .input-group input:read-only {
+            background: rgba(74, 158, 255, 0.1);
+            border-color: rgba(74, 158, 255, 0.3);
+            cursor: default;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .swap-btn {
+            align-self: center;
+            background: linear-gradient(135deg, #4a9eff, #0066cc);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+        }
+
+        .swap-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(74, 158, 255, 0.5);
+        }
+
+        .swap-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .results-panel {
+            background: rgba(30, 30, 45, 0.9);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .results-title {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .results-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #4a9eff, #00ff88);
+            border-radius: 2px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .result-value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .result-value.highlight {
+            color: #4a9eff;
+        }
+
+        .result-value.success {
+            color: #00ff88;
+        }
+
+        .command-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .command-box code {
+            color: #00ff88;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .info-panel {
+            background: rgba(30, 30, 45, 0.9);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-panel h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .info-panel p {
+            color: #888;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .info-panel ul {
+            color: #888;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            margin-left: 20px;
+        }
+
+        .direction-indicator {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: rgba(74, 158, 255, 0.1);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #4a9eff;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        footer a {
+            color: #4a9eff;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MOHAA ↔ CS2 Sensitivity Converter</h1>
+        <p class="subtitle">Convert your sensitivity between Medal of Honor: Allied Assault and Counter-Strike 2</p>
+
+        <div class="direction-indicator" id="direction">
+            Converting: <strong>MOHAA → CS2</strong>
+        </div>
+
+        <div class="converter-wrapper">
+            <!-- MOHAA Panel (Source) -->
+            <div class="game-panel" id="source-panel">
+                <div class="game-header">
+                    <div class="game-icon mohaa-icon">MOH</div>
+                    <div>
+                        <div class="game-title">Medal of Honor: Allied Assault</div>
+                        <div class="game-subtitle">Source Game</div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Sensitivity</label>
+                    <input type="number" id="source-sens" value="1" step="0.01" min="0.01">
+                </div>
+
+                <div class="input-group">
+                    <label>DPI</label>
+                    <input type="number" id="source-dpi" value="800" step="50" min="100">
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Resolution Width</label>
+                        <input type="number" id="source-res-w" value="800" step="1" min="640">
+                    </div>
+                    <div class="input-group">
+                        <label>Height</label>
+                        <input type="number" id="source-res-h" value="600" step="1" min="480">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>FOV</label>
+                    <input type="number" id="source-fov" value="80" step="1" min="60" max="120">
+                </div>
+            </div>
+
+            <!-- Swap Button -->
+            <button class="swap-btn" id="swap-btn" title="Swap games">
+                <svg viewBox="0 0 24 24">
+                    <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
+                </svg>
+            </button>
+
+            <!-- CS2 Panel (Target) -->
+            <div class="game-panel" id="target-panel">
+                <div class="game-header">
+                    <div class="game-icon cs2-icon">CS2</div>
+                    <div>
+                        <div class="game-title">Counter-Strike 2</div>
+                        <div class="game-subtitle">Target Game</div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Sensitivity (Result)</label>
+                    <input type="number" id="target-sens" value="" readonly>
+                </div>
+
+                <div class="input-group">
+                    <label>DPI</label>
+                    <input type="number" id="target-dpi" value="800" step="50" min="100">
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Resolution Width</label>
+                        <input type="number" id="target-res-w" value="800" step="1" min="640">
+                    </div>
+                    <div class="input-group">
+                        <label>Height</label>
+                        <input type="number" id="target-res-h" value="600" step="1" min="480">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>FOV</label>
+                    <input type="number" id="target-fov" value="90" step="1" min="60" max="120">
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel">
+            <div class="results-title">Conversion Results</div>
+
+            <div class="result-row">
+                <span class="result-label">Source 360° Distance</span>
+                <span class="result-value highlight" id="source-360">60.5376 cm</span>
+            </div>
+
+            <div class="result-row">
+                <span class="result-label">Target 360° Distance</span>
+                <span class="result-value highlight" id="target-360">60.4123 cm</span>
+            </div>
+
+            <div class="result-row">
+                <span class="result-label">Discrepancy</span>
+                <span class="result-value success" id="discrepancy">-0.21% (-0.13 cm)</span>
+            </div>
+
+            <div class="command-box" id="mohaa-command" style="display: block;">
+                <code id="command-text">seta sensitivity "1"</code>
+                <button class="copy-btn" onclick="copyCommand()">Copy</button>
+            </div>
+
+            <div class="command-box" id="cs2-command" style="display: block; margin-top: 10px;">
+                <code id="cs2-command-text">sensitivity "0.86"</code>
+                <button class="copy-btn" onclick="copyCs2Command()">Copy</button>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <h3>How It Works</h3>
+            <p>This converter matches your 360° turn distance between games. The 360° distance is how far you need to move your mouse to complete a full 360° turn in-game.</p>
+            <p><strong>Game-specific details:</strong></p>
+            <ul>
+                <li><strong>MOHAA:</strong> Uses yaw value of ~0.01888 (Quake 3 engine based)</li>
+                <li><strong>CS2:</strong> Uses yaw value of 0.022 (Source 2 engine)</li>
+                <li>Formula: cm/360° = (360 × 2.54) ÷ (DPI × sensitivity × yaw)</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>Note:</strong> Resolution affects the aspect ratio but not the sensitivity calculation. FOV is shown for reference but the conversion is based on matching physical mouse movement distance.</p>
+        </div>
+
+        <footer>
+            <p>Created for the MOHAA community | <a href="https://github.com/pstngh/mohaa-sensitivity-converter" target="_blank">View on GitHub</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Game yaw values (degrees per mouse count)
+        const MOHAA_YAW = 0.01888;  // Derived from: 60.5376 cm @ sens 1, DPI 800
+        const CS2_YAW = 0.022;
+
+        // State
+        let isMohaaSource = true;
+
+        // DOM Elements
+        const sourceSens = document.getElementById('source-sens');
+        const sourceDpi = document.getElementById('source-dpi');
+        const sourceResW = document.getElementById('source-res-w');
+        const sourceResH = document.getElementById('source-res-h');
+        const sourceFov = document.getElementById('source-fov');
+
+        const targetSens = document.getElementById('target-sens');
+        const targetDpi = document.getElementById('target-dpi');
+        const targetResW = document.getElementById('target-res-w');
+        const targetResH = document.getElementById('target-res-h');
+        const targetFov = document.getElementById('target-fov');
+
+        const source360 = document.getElementById('source-360');
+        const target360 = document.getElementById('target-360');
+        const discrepancy = document.getElementById('discrepancy');
+        const direction = document.getElementById('direction');
+        const commandText = document.getElementById('command-text');
+        const cs2CommandText = document.getElementById('cs2-command-text');
+        const mohaaCommand = document.getElementById('mohaa-command');
+        const cs2Command = document.getElementById('cs2-command');
+
+        const sourcePanel = document.getElementById('source-panel');
+        const targetPanel = document.getElementById('target-panel');
+
+        // Calculate cm/360
+        function calculateCm360(sens, dpi, yaw) {
+            return (360 * 2.54) / (dpi * sens * yaw);
+        }
+
+        // Calculate sensitivity from cm/360
+        function calculateSensFromCm360(cm360, dpi, yaw) {
+            return (360 * 2.54) / (cm360 * dpi * yaw);
+        }
+
+        // Main conversion function
+        function convert() {
+            const srcSens = parseFloat(sourceSens.value) || 1;
+            const srcDpi = parseFloat(sourceDpi.value) || 800;
+            const tgtDpi = parseFloat(targetDpi.value) || 800;
+
+            const srcYaw = isMohaaSource ? MOHAA_YAW : CS2_YAW;
+            const tgtYaw = isMohaaSource ? CS2_YAW : MOHAA_YAW;
+
+            // Calculate source cm/360
+            const srcCm360 = calculateCm360(srcSens, srcDpi, srcYaw);
+
+            // Calculate target sensitivity to match cm/360
+            const tgtSens = calculateSensFromCm360(srcCm360, tgtDpi, tgtYaw);
+
+            // Calculate actual target cm/360 (for discrepancy check)
+            const tgtCm360 = calculateCm360(tgtSens, tgtDpi, tgtYaw);
+
+            // Calculate discrepancy
+            const diff = tgtCm360 - srcCm360;
+            const diffPercent = ((tgtCm360 - srcCm360) / srcCm360) * 100;
+
+            // Update UI
+            targetSens.value = tgtSens.toFixed(4);
+            source360.textContent = srcCm360.toFixed(4) + ' cm';
+            target360.textContent = tgtCm360.toFixed(4) + ' cm';
+
+            // Format discrepancy
+            const sign = diff >= 0 ? '+' : '';
+            discrepancy.textContent = `${sign}${diffPercent.toFixed(2)}% (${sign}${diff.toFixed(4)} cm)`;
+
+            // Update commands
+            if (isMohaaSource) {
+                commandText.textContent = `seta sensitivity "${srcSens}"`;
+                cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(4)}"`;
+                mohaaCommand.querySelector('.copy-btn').setAttribute('onclick', 'copyCommand()');
+            } else {
+                commandText.textContent = `sensitivity "${srcSens}"`;
+                cs2CommandText.textContent = `seta sensitivity "${tgtSens.toFixed(4)}"`;
+            }
+        }
+
+        // Swap source and target games
+        function swapGames() {
+            isMohaaSource = !isMohaaSource;
+
+            // Update direction indicator
+            direction.innerHTML = isMohaaSource
+                ? 'Converting: <strong>MOHAA → CS2</strong>'
+                : 'Converting: <strong>CS2 → MOHAA</strong>';
+
+            // Update panel headers
+            const sourceHeader = sourcePanel.querySelector('.game-header');
+            const targetHeader = targetPanel.querySelector('.game-header');
+
+            if (isMohaaSource) {
+                sourceHeader.innerHTML = `
+                    <div class="game-icon mohaa-icon">MOH</div>
+                    <div>
+                        <div class="game-title">Medal of Honor: Allied Assault</div>
+                        <div class="game-subtitle">Source Game</div>
+                    </div>
+                `;
+                targetHeader.innerHTML = `
+                    <div class="game-icon cs2-icon">CS2</div>
+                    <div>
+                        <div class="game-title">Counter-Strike 2</div>
+                        <div class="game-subtitle">Target Game</div>
+                    </div>
+                `;
+                sourceFov.value = 80;
+                targetFov.value = 90;
+            } else {
+                sourceHeader.innerHTML = `
+                    <div class="game-icon cs2-icon">CS2</div>
+                    <div>
+                        <div class="game-title">Counter-Strike 2</div>
+                        <div class="game-subtitle">Source Game</div>
+                    </div>
+                `;
+                targetHeader.innerHTML = `
+                    <div class="game-icon mohaa-icon">MOH</div>
+                    <div>
+                        <div class="game-title">Medal of Honor: Allied Assault</div>
+                        <div class="game-subtitle">Target Game</div>
+                    </div>
+                `;
+                sourceFov.value = 90;
+                targetFov.value = 80;
+            }
+
+            // Reset sensitivity to default for new source game
+            sourceSens.value = isMohaaSource ? 1 : 0.86;
+
+            convert();
+        }
+
+        // Copy commands
+        function copyCommand() {
+            navigator.clipboard.writeText(commandText.textContent);
+            const btn = mohaaCommand.querySelector('.copy-btn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 1500);
+        }
+
+        function copyCs2Command() {
+            navigator.clipboard.writeText(cs2CommandText.textContent);
+            const btn = cs2Command.querySelector('.copy-btn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 1500);
+        }
+
+        // Event listeners
+        sourceSens.addEventListener('input', convert);
+        sourceDpi.addEventListener('input', convert);
+        targetDpi.addEventListener('input', convert);
+        sourceResW.addEventListener('input', convert);
+        sourceResH.addEventListener('input', convert);
+        sourceFov.addEventListener('input', convert);
+        targetResW.addEventListener('input', convert);
+        targetResH.addEventListener('input', convert);
+        targetFov.addEventListener('input', convert);
+
+        document.getElementById('swap-btn').addEventListener('click', swapGames);
+
+        // Initial conversion
+        convert();
+    </script>
+</body>
+</html>
