@@ -237,6 +237,12 @@
             color: #00ff88;
         }
 
+        .command-label {
+            color: #4a9eff;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
         .copy-btn {
             position: absolute;
             top: 10px;
@@ -425,12 +431,12 @@
             </div>
 
             <div class="command-box" id="mohaa-command" style="display: block;">
-                <code id="command-text">seta sensitivity "1"</code>
+                <span class="command-label">MOHAA:</span> <code id="command-text">sensitivity "1"</code>
                 <button class="copy-btn" onclick="copyCommand()">Copy</button>
             </div>
 
             <div class="command-box" id="cs2-command" style="display: block; margin-top: 10px;">
-                <code id="cs2-command-text">sensitivity "0.86"</code>
+                <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "0.86"</code>
                 <button class="copy-btn" onclick="copyCs2Command()">Copy</button>
             </div>
         </div>
@@ -549,13 +555,13 @@
             const sign = diff >= 0 ? '+' : '';
             discrepancy.textContent = `${sign}${diffPercent.toFixed(2)}% (${sign}${diff.toFixed(4)} cm)`;
 
-            // Update commands
+            // Update commands - MOHAA command in first box, CS2 in second
             if (isMohaaSource) {
-                commandText.textContent = `seta sensitivity "${srcSens}"`;
+                commandText.textContent = `sensitivity "${srcSens}"`;
                 cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(2)}"`;
             } else {
-                commandText.textContent = `sensitivity "${srcSens}"`;
-                cs2CommandText.textContent = `seta sensitivity "${tgtSens.toFixed(2)}"`;
+                commandText.textContent = `sensitivity "${tgtSens.toFixed(2)}"`;
+                cs2CommandText.textContent = `sensitivity "${srcSens}"`;
             }
         }
 
