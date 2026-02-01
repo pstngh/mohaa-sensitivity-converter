@@ -335,7 +335,7 @@
                     </div>
                 </div>
 
-                <div class="input-row">
+                <div class="input-row" id="source-res-row">
                     <div class="input-group">
                         <label>Resolution</label>
                         <input type="number" id="source-res-w" value="1024" step="1" min="640">
@@ -386,6 +386,17 @@
                     </div>
                 </div>
 
+                <div class="input-row" id="target-res-row" style="display: none;">
+                    <div class="input-group">
+                        <label>Resolution</label>
+                        <input type="number" id="target-res-w" value="1024" step="1" min="640">
+                    </div>
+                    <div class="input-group">
+                        <label>&nbsp;</label>
+                        <input type="number" id="target-res-h" value="768" step="1" min="480">
+                    </div>
+                </div>
+
                 <div class="input-row" id="target-fov-pitch-row" style="display: none;">
                     <div class="input-group" id="target-fov-group">
                         <label>FOV</label>
@@ -424,14 +435,12 @@
 
         <!-- Info Panel -->
         <div class="info-panel">
-            <h3>How It Works</h3>
-            <p>This converter matches your 360° turn distance between games. The 360° distance is how far you need to move your mouse to complete a full 360° turn in-game.</p>
-            <p><strong>Game-specific details:</strong></p>
+            <h3>16:9 FOV Equivalents</h3>
+            <p>To match the same cm/360 at 16:9 as you would have at 4:3, use these equivalent FOV values:</p>
             <ul>
-                <li><strong>MOHAA:</strong> Quake 3 engine - sensitivity scales with FOV and aspect ratio. Widescreen resolutions (16:9) result in slower sensitivity compared to 4:3.</li>
-                <li><strong>CS2:</strong> Uses fixed yaw value of 0.022 at FOV 90. m_pitch is locked but can be simulated.</li>
+                <li><strong>4:3 FOV 80</strong> = <strong>16:9 FOV 96.418</strong></li>
+                <li><strong>5:4 FOV 80</strong> = <strong>16:9 FOV 100.077</strong></li>
             </ul>
-            <p style="margin-top: 15px;"><strong>m_pitch bypass:</strong> If you set a custom m_pitch, the converter adjusts sensitivity and m_yaw to simulate the desired vertical feel while keeping horizontal unchanged.</p>
         </div>
 
         <footer>
@@ -508,12 +517,16 @@
         const sourceFov = document.getElementById('source-fov');
         const sourcePitch = document.getElementById('source-pitch');
         const sourceFovPitchRow = document.getElementById('source-fov-pitch-row');
+        const sourceResRow = document.getElementById('source-res-row');
 
         const targetSens = document.getElementById('target-sens');
         const targetDpi = document.getElementById('target-dpi');
+        const targetResW = document.getElementById('target-res-w');
+        const targetResH = document.getElementById('target-res-h');
         const targetFov = document.getElementById('target-fov');
         const targetPitch = document.getElementById('target-pitch');
         const targetFovPitchRow = document.getElementById('target-fov-pitch-row');
+        const targetResRow = document.getElementById('target-res-row');
 
         const cm360Display = document.getElementById('cm360');
         const direction = document.getElementById('direction');
@@ -553,8 +566,8 @@
                 : (parseFloat(targetPitch.value) || 0.022);
 
             // Get MOHAA resolution (only MOHAA resolution matters)
-            const mohaaResW = isMohaaSource ? srcResW : srcResW;
-            const mohaaResH = isMohaaSource ? srcResH : srcResH;
+            const mohaaResW = isMohaaSource ? srcResW : (parseFloat(targetResW.value) || 1024);
+            const mohaaResH = isMohaaSource ? srcResH : (parseFloat(targetResH.value) || 768);
             const mohaaFov = isMohaaSource ? srcFov : tgtFov;
 
             // Get yaw values based on direction, FOV, and resolution (for MOHAA)
@@ -592,13 +605,13 @@
             }
 
             // Update UI
-            targetSens.value = tgtSens.toFixed(2);
-            cm360Display.textContent = srcCm360.toFixed(2) + ' cm';
+            targetSens.value = tgtSens.toFixed(3);
+            cm360Display.textContent = srcCm360.toFixed(3) + ' cm';
 
             // Update commands
             if (isMohaaSource) {
                 commandText.textContent = `sensitivity "${srcSens}"`;
-                cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(2)}"`;
+                cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(3)}"`;
                 if (needsYawAdjustment) {
                     yawCommand.style.display = 'block';
                     yawCommandText.textContent = `m_yaw "${adjustedYaw.toFixed(5)}"`;
@@ -606,7 +619,7 @@
                     yawCommand.style.display = 'none';
                 }
             } else {
-                commandText.textContent = `sensitivity "${tgtSens.toFixed(2)}"`;
+                commandText.textContent = `sensitivity "${tgtSens.toFixed(3)}"`;
                 cs2CommandText.textContent = `sensitivity "${srcSens}"`;
                 if (needsYawAdjustment) {
                     yawCommand.style.display = 'block';
@@ -643,7 +656,9 @@
                         <div class="game-subtitle">Target Game</div>
                     </div>
                 `;
+                sourceResRow.style.display = 'grid';
                 sourceFovPitchRow.style.display = 'grid';
+                targetResRow.style.display = 'none';
                 targetFovPitchRow.style.display = 'none';
                 sourceFov.value = 80;
             } else {
@@ -661,7 +676,9 @@
                         <div class="game-subtitle">Target Game</div>
                     </div>
                 `;
+                sourceResRow.style.display = 'none';
                 sourceFovPitchRow.style.display = 'none';
+                targetResRow.style.display = 'grid';
                 targetFovPitchRow.style.display = 'grid';
                 targetFov.value = 80;
             }
@@ -698,6 +715,8 @@
         sourceResW.addEventListener('input', convert);
         sourceResH.addEventListener('input', convert);
         targetDpi.addEventListener('input', convert);
+        targetResW.addEventListener('input', convert);
+        targetResH.addEventListener('input', convert);
         sourceFov.addEventListener('input', convert);
         targetFov.addEventListener('input', convert);
         sourcePitch.addEventListener('input', convert);
