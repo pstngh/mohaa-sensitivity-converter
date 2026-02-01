@@ -331,7 +331,7 @@
                     </div>
                 </div>
 
-                <div class="input-row">
+                <div class="input-row-3" id="source-sens-row">
                     <div class="input-group">
                         <label>Sensitivity</label>
                         <input type="number" id="source-sens" value="1" step="0.01" min="0.01">
@@ -339,6 +339,10 @@
                     <div class="input-group">
                         <label>DPI</label>
                         <input type="number" id="source-dpi" value="800" step="50" min="100">
+                    </div>
+                    <div class="input-group" id="source-pitch-group">
+                        <label>m_pitch</label>
+                        <input type="number" id="source-pitch" value="0.022" step="0.001" min="0.001">
                     </div>
                 </div>
 
@@ -354,13 +358,6 @@
                     <div class="input-group" id="source-fov-group">
                         <label>FOV</label>
                         <input type="number" id="source-fov" value="80" step="1" min="40" max="120">
-                    </div>
-                </div>
-
-                <div class="input-row" id="source-pitch-row">
-                    <div class="input-group" id="source-pitch-group">
-                        <label>m_pitch</label>
-                        <input type="number" id="source-pitch" value="0.022" step="0.001" min="0.001">
                     </div>
                 </div>
             </div>
@@ -413,8 +410,7 @@
         <!-- Results Section -->
         <div class="results-section">
             <div class="result-row">
-                <span class="result-value" id="cm360">60.54 cm</span>
-                <span class="result-label">360° Distance</span>
+                <span class="result-value" id="cm360">60.54 cm/360°</span>
             </div>
 
             <div class="command-box" id="mohaa-command">
@@ -423,7 +419,7 @@
             </div>
 
             <div class="command-box" id="cs2-command">
-                <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "0.86"</code><span id="yaw-inline" style="display: none;"> &nbsp;<code id="yaw-command-text">m_yaw "0.022"</code></span>
+                <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "0.86"</code><span id="yaw-inline" style="display: none;">; <code id="yaw-command-text">m_yaw "0.022"</code></span>
                 <button class="copy-btn" onclick="copyCs2Command()">Copy</button>
             </div>
         </div>
@@ -517,8 +513,8 @@
         const sourceResH = document.getElementById('source-res-h');
         const sourceFov = document.getElementById('source-fov');
         const sourcePitch = document.getElementById('source-pitch');
+        const sourcePitchGroup = document.getElementById('source-pitch-group');
         const sourceResFovRow = document.getElementById('source-res-fov-row');
-        const sourcePitchRow = document.getElementById('source-pitch-row');
 
         const targetSens = document.getElementById('target-sens');
         const targetDpi = document.getElementById('target-dpi');
@@ -605,7 +601,7 @@
 
             // Update UI
             targetSens.value = tgtSens.toFixed(3);
-            cm360Display.textContent = srcCm360.toFixed(3) + ' cm';
+            cm360Display.textContent = srcCm360.toFixed(3) + ' cm/360°';
 
             // Update commands
             if (isMohaaSource) {
@@ -659,7 +655,7 @@
                 sourceResW.value = targetResW.value;
                 sourceResH.value = targetResH.value;
                 sourceResFovRow.style.display = 'grid';
-                sourcePitchRow.style.display = 'grid';
+                sourcePitchGroup.style.display = 'block';
                 targetResFovRow.style.display = 'none';
                 sourceFov.value = targetFov.value;
             } else {
@@ -681,7 +677,7 @@
                 targetResW.value = sourceResW.value;
                 targetResH.value = sourceResH.value;
                 sourceResFovRow.style.display = 'none';
-                sourcePitchRow.style.display = 'none';
+                sourcePitchGroup.style.display = 'none';
                 targetResFovRow.style.display = 'grid';
                 targetFov.value = sourceFov.value;
             }
@@ -699,7 +695,7 @@
         }
 
         function copyCs2Command() {
-            const text = cs2CommandText.textContent + (yawInline.style.display !== 'none' ? ' ' + yawCommandText.textContent : '');
+            const text = cs2CommandText.textContent + (yawInline.style.display !== 'none' ? '; ' + yawCommandText.textContent : '');
             navigator.clipboard.writeText(text);
             const btn = cs2Command.querySelector('.copy-btn');
             btn.textContent = 'Copied!';
