@@ -445,25 +445,52 @@
         const CS2_PITCH = 0.022;
 
         // MOHAA (Quake 3 engine) yaw scales with FOV and aspect ratio
-        // Cubic formula derived from 9 FOV data points (40-120) at 4:3
-        // Aspect ratio formula derived from 44 data points across 5:4, 16:10, 16:9, 21:9
-        // FOV error: <0.02%, Aspect ratio error: <0.2% (for 5:4, 16:10, 16:9)
+        // Lookup tables derived from reference converter data for maximum accuracy
+        // 4:3: 17 data points (FOV 40-120, every 5°) - 0% error at data points
+        // 16:9: 9 data points (FOV 40-120, every 10°) - 0% error at data points
         function getMohaaYaw(fov, width, height) {
-            // Cubic fit coefficients for FOV scaling at 4:3
-            const a = 2.336869e-9;
-            const b = 4.501732e-8;
-            const c = 2.165805e-4;
-            const d = 7.363312e-5;
-            const baseYaw = a*fov*fov*fov + b*fov*fov + c*fov + d;
+            // 4:3 yaw lookup table (800x600 reference)
+            const table43 = [
+                [40, 0.0093728321], [45, 0.0101246582], [50, 0.0116328300],
+                [55, 0.0125117948], [60, 0.0138734133], [65, 0.0149826382],
+                [70, 0.0161808862], [75, 0.0175532086], [80, 0.0188808278],
+                [85, 0.0202392589], [90, 0.0215950892], [95, 0.0230558363],
+                [100, 0.0246268801], [105, 0.0260161787], [110, 0.0277955435],
+                [115, 0.0291306675], [120, 0.0312676958]
+            ];
 
-            // Aspect ratio correction with quadratic model
+            // Aspect ratio exponent lookup (derived from 16:9 data)
+            const expTable = [
+                [40, 1.12157994], [50, 1.04091810], [60, 0.95022438],
+                [70, 0.86615309], [80, 0.84101962], [90, 0.78631076],
+                [100, 0.74943989], [110, 0.69650185], [120, 0.64636413]
+            ];
+
+            // Linear interpolation helper
+            function interp(val, table) {
+                if (val <= table[0][0]) return table[0][1];
+                if (val >= table[table.length-1][0]) return table[table.length-1][1];
+                for (let i = 0; i < table.length - 1; i++) {
+                    if (val >= table[i][0] && val <= table[i+1][0]) {
+                        const t = (val - table[i][0]) / (table[i+1][0] - table[i][0]);
+                        return table[i][1] + t * (table[i+1][1] - table[i][1]);
+                    }
+                }
+                return table[table.length-1][1];
+            }
+
+            const baseYaw = interp(fov, table43);
             const currentAspect = width / height;
             const baseAspect = 4 / 3;
-            // 6-parameter quadratic: exp = a + b*fov + c*aspect + d*fov² + e*aspect² + f*fov*aspect
-            const aspectExponent = 0.869550 + 0.000520 * fov + 0.077232 * currentAspect
-                                 - 0.000046 * fov * fov - 0.026677 * currentAspect * currentAspect
-                                 + 0.001243 * fov * currentAspect;
-            const aspectFactor = Math.pow(baseAspect / currentAspect, aspectExponent);
+
+            // If 4:3, return directly from lookup
+            if (Math.abs(currentAspect - baseAspect) < 0.01) {
+                return baseYaw;
+            }
+
+            // For other aspect ratios, apply correction factor
+            const exp = interp(fov, expTable);
+            const aspectFactor = Math.pow(baseAspect / currentAspect, exp);
 
             return baseYaw * aspectFactor;
         }
