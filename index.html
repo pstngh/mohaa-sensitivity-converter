@@ -446,8 +446,8 @@
 
         // MOHAA (Quake 3 engine) yaw scales with FOV and aspect ratio
         // Cubic formula derived from 9 FOV data points (40-120) at 4:3
-        // Aspect ratio formula derived from 35 data points across 5:4, 16:10, 16:9, 21:9
-        // FOV error: <0.02%, Aspect ratio error: <1.0%
+        // Aspect ratio formula derived from 44 data points across 5:4, 16:10, 16:9, 21:9
+        // FOV error: <0.02%, Aspect ratio error: <0.2% (for 5:4, 16:10, 16:9)
         function getMohaaYaw(fov, width, height) {
             // Cubic fit coefficients for FOV scaling at 4:3
             const a = 2.336869e-9;
@@ -456,11 +456,13 @@
             const d = 7.363312e-5;
             const baseYaw = a*fov*fov*fov + b*fov*fov + c*fov + d;
 
-            // Aspect ratio correction with FOV and aspect-dependent exponent
+            // Aspect ratio correction with quadratic model
             const currentAspect = width / height;
             const baseAspect = 4 / 3;
-            // 4-parameter model: exp = a + b*fov + c*aspect + d*fov*aspect
-            const aspectExponent = 1.298146 - 0.007829 * fov - 0.042476 * currentAspect + 0.001590 * fov * currentAspect;
+            // 6-parameter quadratic: exp = a + b*fov + c*aspect + d*fov² + e*aspect² + f*fov*aspect
+            const aspectExponent = 0.869550 + 0.000520 * fov + 0.077232 * currentAspect
+                                 - 0.000046 * fov * fov - 0.026677 * currentAspect * currentAspect
+                                 + 0.001243 * fov * currentAspect;
             const aspectFactor = Math.pow(baseAspect / currentAspect, aspectExponent);
 
             return baseYaw * aspectFactor;
