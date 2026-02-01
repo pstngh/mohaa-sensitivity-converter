@@ -145,6 +145,12 @@
             gap: 12px;
         }
 
+        .input-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
         .swap-btn {
             align-self: center;
             background: linear-gradient(135deg, #4a9eff, #0066cc);
@@ -181,10 +187,11 @@
 
         .result-row {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
+            justify-content: center;
             margin-bottom: 15px;
-            gap: 5px;
+            gap: 8px;
         }
 
         .result-label {
@@ -335,7 +342,7 @@
                     </div>
                 </div>
 
-                <div class="input-row" id="source-res-row">
+                <div class="input-row-3" id="source-res-fov-row">
                     <div class="input-group">
                         <label>Resolution</label>
                         <input type="number" id="source-res-w" value="1024" step="1" min="640">
@@ -344,13 +351,13 @@
                         <label>&nbsp;</label>
                         <input type="number" id="source-res-h" value="768" step="1" min="480">
                     </div>
-                </div>
-
-                <div class="input-row" id="source-fov-pitch-row">
                     <div class="input-group" id="source-fov-group">
                         <label>FOV</label>
                         <input type="number" id="source-fov" value="80" step="1" min="40" max="120">
                     </div>
+                </div>
+
+                <div class="input-row" id="source-pitch-row">
                     <div class="input-group" id="source-pitch-group">
                         <label>m_pitch</label>
                         <input type="number" id="source-pitch" value="0.022" step="0.001" min="0.001">
@@ -386,7 +393,7 @@
                     </div>
                 </div>
 
-                <div class="input-row" id="target-res-row" style="display: none;">
+                <div class="input-row-3" id="target-res-fov-row" style="display: none;">
                     <div class="input-group">
                         <label>Resolution</label>
                         <input type="number" id="target-res-w" value="1024" step="1" min="640">
@@ -395,16 +402,9 @@
                         <label>&nbsp;</label>
                         <input type="number" id="target-res-h" value="768" step="1" min="480">
                     </div>
-                </div>
-
-                <div class="input-row" id="target-fov-pitch-row" style="display: none;">
                     <div class="input-group" id="target-fov-group">
                         <label>FOV</label>
                         <input type="number" id="target-fov" value="80" step="1" min="40" max="120">
-                    </div>
-                    <div class="input-group" id="target-pitch-group">
-                        <label>m_pitch</label>
-                        <input type="number" id="target-pitch" value="0.022" step="0.001" min="0.001">
                     </div>
                 </div>
             </div>
@@ -413,8 +413,8 @@
         <!-- Results Section -->
         <div class="results-section">
             <div class="result-row">
-                <span class="result-label">360° Distance</span>
                 <span class="result-value" id="cm360">60.54 cm</span>
+                <span class="result-label">360° Distance</span>
             </div>
 
             <div class="command-box" id="mohaa-command">
@@ -423,13 +423,8 @@
             </div>
 
             <div class="command-box" id="cs2-command">
-                <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "0.86"</code>
+                <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "0.86"</code><span id="yaw-inline" style="display: none;"> &nbsp;<code id="yaw-command-text">m_yaw "0.022"</code></span>
                 <button class="copy-btn" onclick="copyCs2Command()">Copy</button>
-            </div>
-
-            <div class="command-box" id="yaw-command" style="display: none;">
-                <span class="command-label">CS2 m_yaw:</span> <code id="yaw-command-text">m_yaw "0.022"</code>
-                <button class="copy-btn" onclick="copyYawCommand()">Copy</button>
             </div>
         </div>
 
@@ -522,17 +517,15 @@
         const sourceResH = document.getElementById('source-res-h');
         const sourceFov = document.getElementById('source-fov');
         const sourcePitch = document.getElementById('source-pitch');
-        const sourceFovPitchRow = document.getElementById('source-fov-pitch-row');
-        const sourceResRow = document.getElementById('source-res-row');
+        const sourceResFovRow = document.getElementById('source-res-fov-row');
+        const sourcePitchRow = document.getElementById('source-pitch-row');
 
         const targetSens = document.getElementById('target-sens');
         const targetDpi = document.getElementById('target-dpi');
         const targetResW = document.getElementById('target-res-w');
         const targetResH = document.getElementById('target-res-h');
         const targetFov = document.getElementById('target-fov');
-        const targetPitch = document.getElementById('target-pitch');
-        const targetFovPitchRow = document.getElementById('target-fov-pitch-row');
-        const targetResRow = document.getElementById('target-res-row');
+        const targetResFovRow = document.getElementById('target-res-fov-row');
 
         const cm360Display = document.getElementById('cm360');
         const direction = document.getElementById('direction');
@@ -540,7 +533,7 @@
         const cs2CommandText = document.getElementById('cs2-command-text');
         const mohaaCommand = document.getElementById('mohaa-command');
         const cs2Command = document.getElementById('cs2-command');
-        const yawCommand = document.getElementById('yaw-command');
+        const yawInline = document.getElementById('yaw-inline');
         const yawCommandText = document.getElementById('yaw-command-text');
 
         const sourcePanel = document.getElementById('source-panel');
@@ -566,10 +559,10 @@
             const tgtDpi = parseFloat(targetDpi.value) || 800;
             const tgtFov = parseFloat(targetFov.value) || 80;
 
-            // Get pitch value from MOHAA side (desired vertical feel for CS2)
+            // Get pitch value (only applies when MOHAA is source)
             const cs2Pitch = isMohaaSource
                 ? (parseFloat(sourcePitch.value) || 0.022)
-                : (parseFloat(targetPitch.value) || 0.022);
+                : 0.022;
 
             // Get MOHAA resolution (only MOHAA resolution matters)
             const mohaaResW = isMohaaSource ? srcResW : (parseFloat(targetResW.value) || 1024);
@@ -619,19 +612,19 @@
                 commandText.textContent = `sensitivity "${srcSens}"`;
                 cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(3)}"`;
                 if (needsYawAdjustment) {
-                    yawCommand.style.display = 'block';
+                    yawInline.style.display = 'inline';
                     yawCommandText.textContent = `m_yaw "${adjustedYaw.toFixed(5)}"`;
                 } else {
-                    yawCommand.style.display = 'none';
+                    yawInline.style.display = 'none';
                 }
             } else {
                 commandText.textContent = `sensitivity "${tgtSens.toFixed(3)}"`;
                 cs2CommandText.textContent = `sensitivity "${srcSens}"`;
                 if (needsYawAdjustment) {
-                    yawCommand.style.display = 'block';
+                    yawInline.style.display = 'inline';
                     yawCommandText.textContent = `m_yaw "${adjustedYaw.toFixed(5)}"`;
                 } else {
-                    yawCommand.style.display = 'none';
+                    yawInline.style.display = 'none';
                 }
             }
         }
@@ -665,10 +658,9 @@
                 // Sync resolution from target to source (keep MOHAA resolution)
                 sourceResW.value = targetResW.value;
                 sourceResH.value = targetResH.value;
-                sourceResRow.style.display = 'grid';
-                sourceFovPitchRow.style.display = 'grid';
-                targetResRow.style.display = 'none';
-                targetFovPitchRow.style.display = 'none';
+                sourceResFovRow.style.display = 'grid';
+                sourcePitchRow.style.display = 'grid';
+                targetResFovRow.style.display = 'none';
                 sourceFov.value = targetFov.value;
             } else {
                 sourceHeader.innerHTML = `
@@ -688,10 +680,9 @@
                 // Sync resolution from source to target (keep MOHAA resolution)
                 targetResW.value = sourceResW.value;
                 targetResH.value = sourceResH.value;
-                sourceResRow.style.display = 'none';
-                sourceFovPitchRow.style.display = 'none';
-                targetResRow.style.display = 'grid';
-                targetFovPitchRow.style.display = 'grid';
+                sourceResFovRow.style.display = 'none';
+                sourcePitchRow.style.display = 'none';
+                targetResFovRow.style.display = 'grid';
                 targetFov.value = sourceFov.value;
             }
 
@@ -708,15 +699,9 @@
         }
 
         function copyCs2Command() {
-            navigator.clipboard.writeText(cs2CommandText.textContent);
+            const text = cs2CommandText.textContent + (yawInline.style.display !== 'none' ? ' ' + yawCommandText.textContent : '');
+            navigator.clipboard.writeText(text);
             const btn = cs2Command.querySelector('.copy-btn');
-            btn.textContent = 'Copied!';
-            setTimeout(() => btn.textContent = 'Copy', 1500);
-        }
-
-        function copyYawCommand() {
-            navigator.clipboard.writeText(yawCommandText.textContent);
-            const btn = yawCommand.querySelector('.copy-btn');
             btn.textContent = 'Copied!';
             setTimeout(() => btn.textContent = 'Copy', 1500);
         }
@@ -732,7 +717,6 @@
         sourceFov.addEventListener('input', convert);
         targetFov.addEventListener('input', convert);
         sourcePitch.addEventListener('input', convert);
-        targetPitch.addEventListener('input', convert);
 
         document.getElementById('swap-btn').addEventListener('click', swapGames);
 
