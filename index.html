@@ -447,7 +447,7 @@
         // MOHAA (Quake 3 engine) yaw scales with FOV and aspect ratio
         // Lookup tables derived from reference converter data for maximum accuracy
         // 4:3: 17 data points (FOV 40-120, every 5°) - 0% error at data points
-        // 16:9: 9 data points (FOV 40-120, every 10°) - 0% error at data points
+        // 16:9: 14 data points (FOV 40-120) - 0% error at data points
         function getMohaaYaw(fov, width, height) {
             // 4:3 yaw lookup table (800x600 reference)
             const table43 = [
@@ -459,11 +459,13 @@
                 [115, 0.0291306675], [120, 0.0312676958]
             ];
 
-            // Aspect ratio exponent lookup (derived from 16:9 data)
+            // Aspect ratio exponent lookup (derived from 16:9 data - 14 points)
             const expTable = [
-                [40, 1.12157994], [50, 1.04091810], [60, 0.95022438],
-                [70, 0.86615309], [80, 0.84101962], [90, 0.78631076],
-                [100, 0.74943989], [110, 0.69650185], [120, 0.64636413]
+                [40, 1.12157995], [50, 1.04091809], [60, 0.95022438],
+                [70, 0.86615309], [75, 0.86243225], [80, 0.84101962],
+                [85, 0.81757153], [90, 0.78631075], [95, 0.76414065],
+                [100, 0.74943988], [105, 0.70129224], [110, 0.69650186],
+                [115, 0.62838188], [120, 0.64636413]
             ];
 
             // Linear interpolation helper
