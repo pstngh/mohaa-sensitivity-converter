@@ -420,6 +420,60 @@
             <p style="margin-top: 15px;"><strong>Note:</strong> Make sure to enter your actual MOHAA resolution and FOV for accurate conversion.</p>
         </div>
 
+        <!-- Divider -->
+        <div style="margin: 40px 0; border-top: 2px solid rgba(255,255,255,0.1);"></div>
+
+        <!-- CS2 m_pitch Bypass Calculator -->
+        <h2 style="text-align: center; margin-bottom: 10px; color: #fff; font-size: 1.5rem;">CS2 m_pitch Bypass Calculator</h2>
+        <p class="subtitle">Simulate custom vertical sensitivity in CS2 (where m_pitch is locked)</p>
+
+        <div class="game-panel" style="max-width: 500px; margin: 20px auto;">
+            <div class="game-header">
+                <div class="game-icon cs2-icon">CS2</div>
+                <div>
+                    <div class="game-title">Pitch Bypass Settings</div>
+                    <div class="game-subtitle">Workaround for locked m_pitch</div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Current Sensitivity</label>
+                <input type="number" id="pitch-sens" value="1" step="0.01" min="0.01">
+            </div>
+
+            <div class="input-group">
+                <label>Desired m_pitch (default is 0.022)</label>
+                <input type="number" id="pitch-desired" value="0.018" step="0.001" min="0.001">
+            </div>
+        </div>
+
+        <div class="results-section" style="max-width: 500px; margin: 20px auto;">
+            <div class="result-row">
+                <span class="result-label">Pitch Ratio</span>
+                <span class="result-value" id="pitch-ratio">81.82%</span>
+            </div>
+
+            <div class="command-box">
+                <span class="command-label">New Sensitivity:</span> <code id="pitch-new-sens">sensitivity "0.82"</code>
+                <button class="copy-btn" onclick="copyPitchSens()">Copy</button>
+            </div>
+
+            <div class="command-box">
+                <span class="command-label">New m_yaw:</span> <code id="pitch-new-yaw">m_yaw "0.0269"</code>
+                <button class="copy-btn" onclick="copyPitchYaw()">Copy</button>
+            </div>
+        </div>
+
+        <div class="info-panel" style="max-width: 500px; margin: 20px auto;">
+            <h3>How It Works</h3>
+            <p>CS2 locks <code>m_pitch</code> at 0.022, preventing custom vertical sensitivity. This calculator works around it:</p>
+            <ul>
+                <li><strong>Step 1:</strong> Lower global sensitivity by ratio (desired_pitch / 0.022) to slow down vertical aim</li>
+                <li><strong>Step 2:</strong> Increase m_yaw by inverse ratio to restore horizontal speed</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>Result:</strong> Vertical feels like your desired pitch, horizontal stays unchanged.</p>
+        </div>
+
         <footer>
             <p>Created for the MOHAA community | <a href="https://github.com/pstngh/mohaa-sensitivity-converter" target="_blank">View on GitHub</a></p>
         </footer>
@@ -622,6 +676,57 @@
 
         // Initial conversion
         convert();
+
+        // ==========================================
+        // CS2 m_pitch Bypass Calculator
+        // ==========================================
+
+        const pitchSens = document.getElementById('pitch-sens');
+        const pitchDesired = document.getElementById('pitch-desired');
+        const pitchRatio = document.getElementById('pitch-ratio');
+        const pitchNewSens = document.getElementById('pitch-new-sens');
+        const pitchNewYaw = document.getElementById('pitch-new-yaw');
+
+        const CS2_DEFAULT_PITCH = 0.022;
+        const CS2_DEFAULT_YAW = 0.022;
+
+        function calculatePitchBypass() {
+            const sens = parseFloat(pitchSens.value) || 1;
+            const desiredPitch = parseFloat(pitchDesired.value) || 0.022;
+
+            // Step 1: Calculate the ratio
+            const ratio = desiredPitch / CS2_DEFAULT_PITCH;
+
+            // Step 2: Calculate new sensitivity (lower it to slow vertical)
+            const newSens = sens * ratio;
+
+            // Step 3: Calculate new m_yaw (increase to restore horizontal)
+            const newYaw = CS2_DEFAULT_YAW / ratio;
+
+            // Update UI
+            pitchRatio.textContent = (ratio * 100).toFixed(2) + '%';
+            pitchNewSens.textContent = `sensitivity "${newSens.toFixed(4)}"`;
+            pitchNewYaw.textContent = `m_yaw "${newYaw.toFixed(5)}"`;
+        }
+
+        function copyPitchSens() {
+            navigator.clipboard.writeText(pitchNewSens.textContent);
+            event.target.textContent = 'Copied!';
+            setTimeout(() => event.target.textContent = 'Copy', 1500);
+        }
+
+        function copyPitchYaw() {
+            navigator.clipboard.writeText(pitchNewYaw.textContent);
+            event.target.textContent = 'Copied!';
+            setTimeout(() => event.target.textContent = 'Copy', 1500);
+        }
+
+        // Event listeners for pitch calculator
+        pitchSens.addEventListener('input', calculatePitchBypass);
+        pitchDesired.addEventListener('input', calculatePitchBypass);
+
+        // Initial calculation
+        calculatePitchBypass();
     </script>
 </body>
 </html>
