@@ -445,17 +445,20 @@
         const CS2_PITCH = 0.022;
 
         // MOHAA (Quake 3 engine) yaw scales with FOV and aspect ratio
-        // Formula derived from 8 reference data points (FOV 50-120)
-        // Maximum error: 0.22% against reference converter
+        // Cubic formula derived from 9 reference data points (FOV 40-120)
+        // FOV error: <0.02%, Aspect ratio error: <0.5%
         function getMohaaYaw(fov, width, height) {
-            const a = 6.319e-7;
-            const b = 1.70208e-4;
-            const c = 1.21865e-3;
-            const baseYaw = a * fov * fov + b * fov + c;
+            // Cubic fit coefficients for FOV scaling
+            const a = 2.336869e-9;
+            const b = 4.501732e-8;
+            const c = 2.165805e-4;
+            const d = 7.363312e-5;
+            const baseYaw = a*fov*fov*fov + b*fov*fov + c*fov + d;
 
+            // Aspect ratio correction (derived from 5:4, 16:10, 16:9 data)
             const currentAspect = width / height;
             const baseAspect = 4 / 3;
-            const aspectFactor = Math.pow(baseAspect / currentAspect, 0.84);
+            const aspectFactor = Math.pow(baseAspect / currentAspect, 0.802686);
 
             return baseYaw * aspectFactor;
         }
