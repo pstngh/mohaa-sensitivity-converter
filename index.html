@@ -435,11 +435,17 @@
 
         <!-- Info Panel -->
         <div class="info-panel">
-            <h3>16:9 FOV Equivalents</h3>
-            <p>To match the same cm/360 at 16:9 as you would have at 4:3, use these equivalent FOV values:</p>
+            <p>This converter matches your 360° turn distance between games. The 360° distance is how far you need to move your mouse to complete a full 360° turn in-game.</p>
+            <p><strong>Game-specific details:</strong></p>
             <ul>
-                <li><strong>4:3 FOV 80</strong> = <strong>16:9 FOV 96.418</strong></li>
-                <li><strong>5:4 FOV 80</strong> = <strong>16:9 FOV 100.077</strong></li>
+                <li><strong>MOHAA:</strong> Quake 3 engine - sensitivity scales with FOV and aspect ratio. Widescreen resolutions (16:9) result in slower sensitivity compared to 4:3.</li>
+                <li><strong>CS2:</strong> Uses fixed yaw value of 0.022. m_pitch is locked but can be simulated.</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>m_pitch bypass:</strong> If you set a custom m_pitch, the converter adjusts sensitivity and m_yaw to simulate the desired vertical feel while keeping horizontal unchanged.</p>
+            <p style="margin-top: 15px;"><strong>16:9 FOV Equivalents:</strong> To match the same cm/360 at 16:9 as 4:3:</p>
+            <ul>
+                <li>4:3 FOV 80 = 16:9 FOV 96.418</li>
+                <li>5:4 FOV 80 = 16:9 FOV 100.077</li>
             </ul>
         </div>
 
@@ -656,11 +662,14 @@
                         <div class="game-subtitle">Target Game</div>
                     </div>
                 `;
+                // Sync resolution from target to source (keep MOHAA resolution)
+                sourceResW.value = targetResW.value;
+                sourceResH.value = targetResH.value;
                 sourceResRow.style.display = 'grid';
                 sourceFovPitchRow.style.display = 'grid';
                 targetResRow.style.display = 'none';
                 targetFovPitchRow.style.display = 'none';
-                sourceFov.value = 80;
+                sourceFov.value = targetFov.value;
             } else {
                 sourceHeader.innerHTML = `
                     <div class="game-icon cs2-icon">CS2</div>
@@ -676,11 +685,14 @@
                         <div class="game-subtitle">Target Game</div>
                     </div>
                 `;
+                // Sync resolution from source to target (keep MOHAA resolution)
+                targetResW.value = sourceResW.value;
+                targetResH.value = sourceResH.value;
                 sourceResRow.style.display = 'none';
                 sourceFovPitchRow.style.display = 'none';
                 targetResRow.style.display = 'grid';
                 targetFovPitchRow.style.display = 'grid';
-                targetFov.value = 80;
+                targetFov.value = sourceFov.value;
             }
 
             sourceSens.value = 1;
