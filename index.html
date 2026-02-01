@@ -296,6 +296,12 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        .pitch-note {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -343,6 +349,12 @@
                     <label>FOV</label>
                     <input type="number" id="source-fov" value="80" step="1" min="40" max="120">
                 </div>
+
+                <div class="input-group" id="source-pitch-group" style="display: none;">
+                    <label>m_pitch (default 0.022)</label>
+                    <input type="number" id="source-pitch" value="0.022" step="0.001" min="0.001">
+                    <div class="pitch-note">Change to simulate custom vertical sensitivity</div>
+                </div>
             </div>
 
             <!-- Swap Button -->
@@ -387,6 +399,12 @@
                     <label>FOV</label>
                     <input type="number" id="target-fov" value="80" step="1" min="40" max="120">
                 </div>
+
+                <div class="input-group" id="target-pitch-group">
+                    <label>m_pitch (default 0.022)</label>
+                    <input type="number" id="target-pitch" value="0.022" step="0.001" min="0.001">
+                    <div class="pitch-note">Change to simulate custom vertical sensitivity</div>
+                </div>
             </div>
         </div>
 
@@ -406,6 +424,11 @@
                 <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "0.86"</code>
                 <button class="copy-btn" onclick="copyCs2Command()">Copy</button>
             </div>
+
+            <div class="command-box" id="yaw-command" style="display: none;">
+                <span class="command-label">CS2 m_yaw:</span> <code id="yaw-command-text">m_yaw "0.022"</code>
+                <button class="copy-btn" onclick="copyYawCommand()">Copy</button>
+            </div>
         </div>
 
         <!-- Info Panel -->
@@ -415,63 +438,9 @@
             <p><strong>Game-specific details:</strong></p>
             <ul>
                 <li><strong>MOHAA:</strong> Quake 3 engine - sensitivity scales with FOV and aspect ratio. Widescreen resolutions (16:9) result in slower sensitivity compared to 4:3.</li>
-                <li><strong>CS2:</strong> Uses fixed yaw value of 0.022 at FOV 90</li>
+                <li><strong>CS2:</strong> Uses fixed yaw value of 0.022 at FOV 90. m_pitch is locked but can be simulated.</li>
             </ul>
-            <p style="margin-top: 15px;"><strong>Note:</strong> Make sure to enter your actual MOHAA resolution and FOV for accurate conversion.</p>
-        </div>
-
-        <!-- Divider -->
-        <div style="margin: 40px 0; border-top: 2px solid rgba(255,255,255,0.1);"></div>
-
-        <!-- CS2 m_pitch Bypass Calculator -->
-        <h2 style="text-align: center; margin-bottom: 10px; color: #fff; font-size: 1.5rem;">CS2 m_pitch Bypass Calculator</h2>
-        <p class="subtitle">Simulate custom vertical sensitivity in CS2 (where m_pitch is locked)</p>
-
-        <div class="game-panel" style="max-width: 500px; margin: 20px auto;">
-            <div class="game-header">
-                <div class="game-icon cs2-icon">CS2</div>
-                <div>
-                    <div class="game-title">Pitch Bypass Settings</div>
-                    <div class="game-subtitle">Workaround for locked m_pitch</div>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label>Current Sensitivity</label>
-                <input type="number" id="pitch-sens" value="1" step="0.01" min="0.01">
-            </div>
-
-            <div class="input-group">
-                <label>Desired m_pitch (default is 0.022)</label>
-                <input type="number" id="pitch-desired" value="0.018" step="0.001" min="0.001">
-            </div>
-        </div>
-
-        <div class="results-section" style="max-width: 500px; margin: 20px auto;">
-            <div class="result-row">
-                <span class="result-label">Pitch Ratio</span>
-                <span class="result-value" id="pitch-ratio">81.82%</span>
-            </div>
-
-            <div class="command-box">
-                <span class="command-label">New Sensitivity:</span> <code id="pitch-new-sens">sensitivity "0.82"</code>
-                <button class="copy-btn" onclick="copyPitchSens()">Copy</button>
-            </div>
-
-            <div class="command-box">
-                <span class="command-label">New m_yaw:</span> <code id="pitch-new-yaw">m_yaw "0.0269"</code>
-                <button class="copy-btn" onclick="copyPitchYaw()">Copy</button>
-            </div>
-        </div>
-
-        <div class="info-panel" style="max-width: 500px; margin: 20px auto;">
-            <h3>How It Works</h3>
-            <p>CS2 locks <code>m_pitch</code> at 0.022, preventing custom vertical sensitivity. This calculator works around it:</p>
-            <ul>
-                <li><strong>Step 1:</strong> Lower global sensitivity by ratio (desired_pitch / 0.022) to slow down vertical aim</li>
-                <li><strong>Step 2:</strong> Increase m_yaw by inverse ratio to restore horizontal speed</li>
-            </ul>
-            <p style="margin-top: 15px;"><strong>Result:</strong> Vertical feels like your desired pitch, horizontal stays unchanged.</p>
+            <p style="margin-top: 15px;"><strong>m_pitch bypass:</strong> If you set a custom m_pitch, the converter adjusts sensitivity and m_yaw to simulate the desired vertical feel while keeping horizontal unchanged.</p>
         </div>
 
         <footer>
@@ -481,27 +450,16 @@
 
     <script>
         // Game yaw values
-        // CS2 uses fixed yaw of 0.022
         const CS2_YAW = 0.022;
+        const CS2_PITCH = 0.022;
 
         // MOHAA (Quake 3 engine) yaw scales with FOV and aspect ratio
-        // Unlike CS2, MOHAA doesn't adjust FOV for widescreen - it crops vertically
-        // This means sensitivity is slower at wider aspect ratios
-        //
-        // Base yaw derived from reference data at 4:3 (quadratic fit):
-        // FOV 50: yaw = 0.01131, FOV 80: yaw = 0.01892, FOV 100: yaw = 0.02449
-        //
-        // Aspect ratio scaling (derived from 800x600 vs 1920x1080 data):
-        // 800x600 (4:3): 60.5376 cm/360
-        // 1920x1080 (16:9): 77.1083 cm/360
-        // Factor = ((4/3) / aspect) ^ 0.84
         function getMohaaYaw(fov, width, height) {
             const a = 4.97e-7;
             const b = 1.891e-4;
             const c = 6.12e-4;
             const baseYaw = a * fov * fov + b * fov + c;
 
-            // Aspect ratio correction (base is 4:3)
             const currentAspect = width / height;
             const baseAspect = 4 / 3;
             const aspectFactor = Math.pow(baseAspect / currentAspect, 0.84);
@@ -519,6 +477,8 @@
         const sourceResH = document.getElementById('source-res-h');
         const sourceFov = document.getElementById('source-fov');
         const sourceFovGroup = document.getElementById('source-fov-group');
+        const sourcePitch = document.getElementById('source-pitch');
+        const sourcePitchGroup = document.getElementById('source-pitch-group');
 
         const targetSens = document.getElementById('target-sens');
         const targetDpi = document.getElementById('target-dpi');
@@ -526,6 +486,8 @@
         const targetResH = document.getElementById('target-res-h');
         const targetFov = document.getElementById('target-fov');
         const targetFovGroup = document.getElementById('target-fov-group');
+        const targetPitch = document.getElementById('target-pitch');
+        const targetPitchGroup = document.getElementById('target-pitch-group');
 
         const cm360Display = document.getElementById('cm360');
         const direction = document.getElementById('direction');
@@ -533,6 +495,8 @@
         const cs2CommandText = document.getElementById('cs2-command-text');
         const mohaaCommand = document.getElementById('mohaa-command');
         const cs2Command = document.getElementById('cs2-command');
+        const yawCommand = document.getElementById('yaw-command');
+        const yawCommandText = document.getElementById('yaw-command-text');
 
         const sourcePanel = document.getElementById('source-panel');
         const targetPanel = document.getElementById('target-panel');
@@ -559,6 +523,11 @@
             const tgtResH = parseFloat(targetResH.value) || 768;
             const tgtFov = parseFloat(targetFov.value) || 80;
 
+            // Get pitch values for CS2
+            const cs2Pitch = isMohaaSource
+                ? (parseFloat(targetPitch.value) || 0.022)
+                : (parseFloat(sourcePitch.value) || 0.022);
+
             // Get yaw values based on direction, FOV, and resolution (for MOHAA)
             let srcYaw, tgtYaw;
             if (isMohaaSource) {
@@ -573,19 +542,49 @@
             const srcCm360 = calculateCm360(srcSens, srcDpi, srcYaw);
 
             // Calculate target sensitivity to match cm/360
-            const tgtSens = calculateSensFromCm360(srcCm360, tgtDpi, tgtYaw);
+            let tgtSens = calculateSensFromCm360(srcCm360, tgtDpi, tgtYaw);
 
-            // Update UI - round to 2 decimal places for display
+            // Apply pitch bypass if custom pitch is set for CS2
+            let adjustedYaw = CS2_YAW;
+            let needsYawAdjustment = false;
+
+            if (cs2Pitch !== CS2_PITCH) {
+                const pitchRatio = cs2Pitch / CS2_PITCH;
+                if (isMohaaSource) {
+                    // Converting to CS2 - adjust the target sensitivity
+                    tgtSens = tgtSens * pitchRatio;
+                    adjustedYaw = CS2_YAW / pitchRatio;
+                } else {
+                    // Converting from CS2 - the source already has pitch applied
+                    // Adjust source yaw for calculation
+                    adjustedYaw = CS2_YAW / pitchRatio;
+                }
+                needsYawAdjustment = true;
+            }
+
+            // Update UI
             targetSens.value = tgtSens.toFixed(2);
             cm360Display.textContent = srcCm360.toFixed(2) + ' cm';
 
-            // Update commands - MOHAA command in first box, CS2 in second
+            // Update commands
             if (isMohaaSource) {
                 commandText.textContent = `sensitivity "${srcSens}"`;
                 cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(2)}"`;
+                if (needsYawAdjustment) {
+                    yawCommand.style.display = 'block';
+                    yawCommandText.textContent = `m_yaw "${adjustedYaw.toFixed(5)}"`;
+                } else {
+                    yawCommand.style.display = 'none';
+                }
             } else {
                 commandText.textContent = `sensitivity "${tgtSens.toFixed(2)}"`;
                 cs2CommandText.textContent = `sensitivity "${srcSens}"`;
+                if (needsYawAdjustment) {
+                    yawCommand.style.display = 'block';
+                    yawCommandText.textContent = `m_yaw "${adjustedYaw.toFixed(5)}"`;
+                } else {
+                    yawCommand.style.display = 'none';
+                }
             }
         }
 
@@ -593,12 +592,10 @@
         function swapGames() {
             isMohaaSource = !isMohaaSource;
 
-            // Update direction indicator
             direction.innerHTML = isMohaaSource
                 ? 'Converting: <strong>MOHAA → CS2</strong>'
                 : 'Converting: <strong>CS2 → MOHAA</strong>';
 
-            // Update panel headers
             const sourceHeader = sourcePanel.querySelector('.game-header');
             const targetHeader = targetPanel.querySelector('.game-header');
 
@@ -619,6 +616,8 @@
                 `;
                 sourceFovGroup.style.display = 'block';
                 targetFovGroup.style.display = 'none';
+                sourcePitchGroup.style.display = 'none';
+                targetPitchGroup.style.display = 'block';
                 sourceFov.value = 80;
             } else {
                 sourceHeader.innerHTML = `
@@ -637,12 +636,12 @@
                 `;
                 sourceFovGroup.style.display = 'none';
                 targetFovGroup.style.display = 'block';
+                sourcePitchGroup.style.display = 'block';
+                targetPitchGroup.style.display = 'none';
                 targetFov.value = 80;
             }
 
-            // Reset sensitivity to default for new source game
-            sourceSens.value = isMohaaSource ? 1 : 1;
-
+            sourceSens.value = 1;
             convert();
         }
 
@@ -661,6 +660,13 @@
             setTimeout(() => btn.textContent = 'Copy', 1500);
         }
 
+        function copyYawCommand() {
+            navigator.clipboard.writeText(yawCommandText.textContent);
+            const btn = yawCommand.querySelector('.copy-btn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = 'Copy', 1500);
+        }
+
         // Event listeners
         sourceSens.addEventListener('input', convert);
         sourceDpi.addEventListener('input', convert);
@@ -671,62 +677,13 @@
         targetResH.addEventListener('input', convert);
         sourceFov.addEventListener('input', convert);
         targetFov.addEventListener('input', convert);
+        sourcePitch.addEventListener('input', convert);
+        targetPitch.addEventListener('input', convert);
 
         document.getElementById('swap-btn').addEventListener('click', swapGames);
 
         // Initial conversion
         convert();
-
-        // ==========================================
-        // CS2 m_pitch Bypass Calculator
-        // ==========================================
-
-        const pitchSens = document.getElementById('pitch-sens');
-        const pitchDesired = document.getElementById('pitch-desired');
-        const pitchRatio = document.getElementById('pitch-ratio');
-        const pitchNewSens = document.getElementById('pitch-new-sens');
-        const pitchNewYaw = document.getElementById('pitch-new-yaw');
-
-        const CS2_DEFAULT_PITCH = 0.022;
-        const CS2_DEFAULT_YAW = 0.022;
-
-        function calculatePitchBypass() {
-            const sens = parseFloat(pitchSens.value) || 1;
-            const desiredPitch = parseFloat(pitchDesired.value) || 0.022;
-
-            // Step 1: Calculate the ratio
-            const ratio = desiredPitch / CS2_DEFAULT_PITCH;
-
-            // Step 2: Calculate new sensitivity (lower it to slow vertical)
-            const newSens = sens * ratio;
-
-            // Step 3: Calculate new m_yaw (increase to restore horizontal)
-            const newYaw = CS2_DEFAULT_YAW / ratio;
-
-            // Update UI
-            pitchRatio.textContent = (ratio * 100).toFixed(2) + '%';
-            pitchNewSens.textContent = `sensitivity "${newSens.toFixed(4)}"`;
-            pitchNewYaw.textContent = `m_yaw "${newYaw.toFixed(5)}"`;
-        }
-
-        function copyPitchSens() {
-            navigator.clipboard.writeText(pitchNewSens.textContent);
-            event.target.textContent = 'Copied!';
-            setTimeout(() => event.target.textContent = 'Copy', 1500);
-        }
-
-        function copyPitchYaw() {
-            navigator.clipboard.writeText(pitchNewYaw.textContent);
-            event.target.textContent = 'Copied!';
-            setTimeout(() => event.target.textContent = 'Copy', 1500);
-        }
-
-        // Event listeners for pitch calculator
-        pitchSens.addEventListener('input', calculatePitchBypass);
-        pitchDesired.addEventListener('input', calculatePitchBypass);
-
-        // Initial calculation
-        calculatePitchBypass();
     </script>
 </body>
 </html>
