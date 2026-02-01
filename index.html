@@ -350,10 +350,10 @@
                     <input type="number" id="source-fov" value="80" step="1" min="40" max="120">
                 </div>
 
-                <div class="input-group" id="source-pitch-group" style="display: none;">
+                <div class="input-group" id="source-pitch-group">
                     <label>m_pitch (default 0.022)</label>
                     <input type="number" id="source-pitch" value="0.022" step="0.001" min="0.001">
-                    <div class="pitch-note">Change to simulate custom vertical sensitivity</div>
+                    <div class="pitch-note">Set desired vertical feel for CS2</div>
                 </div>
             </div>
 
@@ -400,10 +400,10 @@
                     <input type="number" id="target-fov" value="80" step="1" min="40" max="120">
                 </div>
 
-                <div class="input-group" id="target-pitch-group">
+                <div class="input-group" id="target-pitch-group" style="display: none;">
                     <label>m_pitch (default 0.022)</label>
                     <input type="number" id="target-pitch" value="0.022" step="0.001" min="0.001">
-                    <div class="pitch-note">Change to simulate custom vertical sensitivity</div>
+                    <div class="pitch-note">Set desired vertical feel for CS2</div>
                 </div>
             </div>
         </div>
@@ -523,10 +523,10 @@
             const tgtResH = parseFloat(targetResH.value) || 768;
             const tgtFov = parseFloat(targetFov.value) || 80;
 
-            // Get pitch values for CS2
+            // Get pitch value from MOHAA side (desired vertical feel for CS2)
             const cs2Pitch = isMohaaSource
-                ? (parseFloat(targetPitch.value) || 0.022)
-                : (parseFloat(sourcePitch.value) || 0.022);
+                ? (parseFloat(sourcePitch.value) || 0.022)
+                : (parseFloat(targetPitch.value) || 0.022);
 
             // Get yaw values based on direction, FOV, and resolution (for MOHAA)
             let srcYaw, tgtYaw;
@@ -616,8 +616,8 @@
                 `;
                 sourceFovGroup.style.display = 'block';
                 targetFovGroup.style.display = 'none';
-                sourcePitchGroup.style.display = 'none';
-                targetPitchGroup.style.display = 'block';
+                sourcePitchGroup.style.display = 'block';
+                targetPitchGroup.style.display = 'none';
                 sourceFov.value = 80;
             } else {
                 sourceHeader.innerHTML = `
@@ -636,8 +636,8 @@
                 `;
                 sourceFovGroup.style.display = 'none';
                 targetFovGroup.style.display = 'block';
-                sourcePitchGroup.style.display = 'block';
-                targetPitchGroup.style.display = 'none';
+                sourcePitchGroup.style.display = 'none';
+                targetPitchGroup.style.display = 'block';
                 targetFov.value = 80;
             }
 
