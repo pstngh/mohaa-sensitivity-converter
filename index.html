@@ -291,6 +291,14 @@
             margin-left: 20px;
         }
 
+        .info-panel code {
+            color: #aaa;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.82rem;
+        }
+
         .direction-indicator {
             text-align: center;
             padding: 10px;
@@ -318,12 +326,6 @@
         footer a:hover {
             text-decoration: underline;
         }
-
-        .pitch-note {
-            font-size: 0.75rem;
-            color: #888;
-            margin-top: 4px;
-        }
     </style>
 </head>
 <body>
@@ -336,7 +338,7 @@
         </div>
 
         <div class="converter-wrapper">
-            <!-- MOHAA Panel (Source) -->
+            <!-- Source Panel (MOHAA initially) -->
             <div class="game-panel" id="source-panel">
                 <div class="game-header">
                     <div class="game-icon mohaa-icon">MOH</div>
@@ -346,7 +348,7 @@
                     </div>
                 </div>
 
-                <div class="input-row-3" id="source-sens-row">
+                <div class="input-row">
                     <div class="input-group">
                         <label>Sensitivity</label>
                         <input type="number" id="source-sens" value="1" step="0.01" min="0.01">
@@ -355,24 +357,20 @@
                         <label>DPI</label>
                         <input type="number" id="source-dpi" value="800" step="50" min="100">
                     </div>
-                    <div class="input-group" id="source-pitch-group">
-                        <label>m_pitch</label>
-                        <input type="number" id="source-pitch" value="0.022" step="0.001" min="0.001">
-                    </div>
                 </div>
 
-                <div class="input-row-3" id="source-res-fov-row">
+                <div class="input-row-3" id="source-mohaa-row">
                     <div class="input-group">
-                        <label>Resolution</label>
-                        <input type="number" id="source-res-w" value="1024" step="1" min="640">
+                        <label>cg_fov</label>
+                        <input type="number" id="source-fov" value="80" step="1" min="65" max="120">
                     </div>
                     <div class="input-group">
-                        <label>&nbsp;</label>
-                        <input type="number" id="source-res-h" value="768" step="1" min="480">
+                        <label>m_yaw</label>
+                        <input type="number" id="source-myaw" value="0.022" step="0.001" min="0.001">
                     </div>
-                    <div class="input-group" id="source-fov-group">
-                        <label>FOV</label>
-                        <input type="number" id="source-fov" value="80" step="1" min="40" max="120">
+                    <div class="input-group">
+                        <label>m_pitch</label>
+                        <input type="number" id="source-mpitch" value="0.022" step="0.001" min="0.001">
                     </div>
                 </div>
             </div>
@@ -384,7 +382,7 @@
                 </svg>
             </button>
 
-            <!-- CS2 Panel (Target) -->
+            <!-- Target Panel (CS2 initially) -->
             <div class="game-panel" id="target-panel">
                 <div class="game-header">
                     <div class="game-icon cs2-icon">CS2</div>
@@ -405,18 +403,18 @@
                     </div>
                 </div>
 
-                <div class="input-row-3" id="target-res-fov-row" style="display: none;">
+                <div class="input-row-3" id="target-mohaa-row" style="display: none;">
                     <div class="input-group">
-                        <label>Resolution</label>
-                        <input type="number" id="target-res-w" value="1024" step="1" min="640">
+                        <label>cg_fov</label>
+                        <input type="number" id="target-fov" value="80" step="1" min="65" max="120">
                     </div>
                     <div class="input-group">
-                        <label>&nbsp;</label>
-                        <input type="number" id="target-res-h" value="768" step="1" min="480">
+                        <label>m_yaw</label>
+                        <input type="number" id="target-myaw" value="0.022" step="0.001" min="0.001">
                     </div>
-                    <div class="input-group" id="target-fov-group">
-                        <label>FOV</label>
-                        <input type="number" id="target-fov" value="80" step="1" min="40" max="120">
+                    <div class="input-group">
+                        <label>m_pitch</label>
+                        <input type="number" id="target-mpitch" value="0.022" step="0.001" min="0.001">
                     </div>
                 </div>
             </div>
@@ -425,7 +423,7 @@
         <!-- Results Section -->
         <div class="results-section">
             <div class="result-row">
-                <span class="result-value" id="cm360">60.54 cm/360°</span>
+                <span class="result-value" id="cm360">-- cm/360°</span>
             </div>
 
             <div class="command-box" id="mohaa-command">
@@ -434,25 +432,23 @@
             </div>
 
             <div class="command-box" id="cs2-command">
-                <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "0.86"</code><span id="yaw-inline" style="display: none;">; <code id="yaw-command-text">m_yaw "0.022"</code></span>
+                <span class="command-label">CS2:</span> <code id="cs2-command-text">sensitivity "1"</code><span id="yaw-inline" style="display: none;">; <code id="yaw-command-text">m_yaw "0.022"</code></span>
                 <button class="copy-btn" onclick="copyCs2Command()">Copy</button>
             </div>
         </div>
 
         <!-- Info Panel -->
         <div class="info-panel">
-            <p>This converter matches your 360° turn distance between games. The 360° distance is how far you need to move your mouse to complete a full 360° turn in-game.</p>
-            <p><strong>Game-specific details:</strong></p>
+            <h3>How it works</h3>
+            <p>This converter matches your horizontal 360° turn distance (cm/360) between games, based on the actual <a href="https://github.com/openmoh/openmohaa" target="_blank" style="color: #4a9eff;">OpenMoHAA</a> engine source code.</p>
+            <p><strong>MOHAA sensitivity formula</strong> (from <code>CL_MouseMove</code> and <code>CG_CalcFov</code>):</p>
             <ul>
-                <li><strong>MOHAA:</strong> Quake 3 engine - sensitivity scales with FOV and aspect ratio. Widescreen resolutions (16:9) result in slower sensitivity compared to 4:3.</li>
-                <li><strong>CS2:</strong> Uses fixed yaw value of 0.022. m_pitch is locked but can be simulated.</li>
+                <li><code>degrees_per_count = sensitivity × m_yaw × (fov_y / 75)</code></li>
+                <li><code>fov_y = 2 × atan(0.75 × tan(cg_fov / 2))</code></li>
+                <li>cg_fov is horizontal FOV at 4:3. The engine uses Hor+ scaling, so fov_y (and sensitivity) stays the same at any aspect ratio or resolution.</li>
             </ul>
-            <p style="margin-top: 15px;"><strong>m_pitch bypass:</strong> If you set a custom m_pitch, the converter adjusts sensitivity and m_yaw to simulate the desired vertical feel while keeping horizontal unchanged.</p>
-            <p style="margin-top: 15px;"><strong>16:9 FOV Equivalents:</strong> To match the same cm/360 at 16:9 as 4:3:</p>
-            <ul>
-                <li>4:3 FOV 80 = 16:9 FOV 96.418</li>
-                <li>5:4 FOV 80 = 16:9 FOV 100.077</li>
-            </ul>
+            <p style="margin-top: 15px;"><strong>CS2:</strong> Uses a fixed yaw of 0.022 with no FOV-dependent scaling. <code>degrees_per_count = sensitivity × 0.022</code></p>
+            <p style="margin-top: 15px;"><strong>V/H ratio bypass:</strong> If your MOHAA m_pitch differs from m_yaw, the vertical/horizontal sensitivity ratio won't match in CS2 (which has m_pitch locked at 0.022). The converter adjusts CS2's sensitivity and m_yaw to preserve both your horizontal cm/360 and your V/H ratio.</p>
         </div>
 
         <footer>
@@ -461,61 +457,16 @@
     </div>
 
     <script>
-        // Game yaw values
+        // CS2 fixed yaw/pitch
         const CS2_YAW = 0.022;
-        const CS2_PITCH = 0.022;
 
-        // MOHAA (Quake 3 engine) yaw scales with FOV and aspect ratio
-        // Lookup tables derived from reference converter data for maximum accuracy
-        // 4:3: 17 data points (FOV 40-120, every 5°) - 0% error at data points
-        // 16:9: 14 data points (FOV 40-120) - 0% error at data points
-        function getMohaaYaw(fov, width, height) {
-            // 4:3 yaw lookup table (800x600 reference)
-            const table43 = [
-                [40, 0.0093728321], [45, 0.0101246582], [50, 0.0116328300],
-                [55, 0.0125117948], [60, 0.0138734133], [65, 0.0149826382],
-                [70, 0.0161808862], [75, 0.0175532086], [80, 0.0188808278],
-                [85, 0.0202392589], [90, 0.0215950892], [95, 0.0230558363],
-                [100, 0.0246268801], [105, 0.0260161787], [110, 0.0277955435],
-                [115, 0.0291306675], [120, 0.0312676958]
-            ];
-
-            // Aspect ratio exponent lookup (derived from 16:9 data - 14 points)
-            const expTable = [
-                [40, 1.12157995], [50, 1.04091809], [60, 0.95022438],
-                [70, 0.86615309], [75, 0.86243225], [80, 0.84101962],
-                [85, 0.81757153], [90, 0.78631075], [95, 0.76414065],
-                [100, 0.74943988], [105, 0.70129224], [110, 0.69650186],
-                [115, 0.62838188], [120, 0.64636413]
-            ];
-
-            // Linear interpolation helper
-            function interp(val, table) {
-                if (val <= table[0][0]) return table[0][1];
-                if (val >= table[table.length-1][0]) return table[table.length-1][1];
-                for (let i = 0; i < table.length - 1; i++) {
-                    if (val >= table[i][0] && val <= table[i+1][0]) {
-                        const t = (val - table[i][0]) / (table[i+1][0] - table[i][0]);
-                        return table[i][1] + t * (table[i+1][1] - table[i][1]);
-                    }
-                }
-                return table[table.length-1][1];
-            }
-
-            const baseYaw = interp(fov, table43);
-            const currentAspect = width / height;
-            const baseAspect = 4 / 3;
-
-            // If 4:3, return directly from lookup
-            if (Math.abs(currentAspect - baseAspect) < 0.01) {
-                return baseYaw;
-            }
-
-            // For other aspect ratios, apply correction factor
-            const exp = interp(fov, expTable);
-            const aspectFactor = Math.pow(baseAspect / currentAspect, exp);
-
-            return baseYaw * aspectFactor;
+        // Calculate vertical FOV from cg_fov (horizontal FOV at 4:3)
+        // From OpenMoHAA CG_CalcFov(): cg_fov is treated as horizontal FOV at 4:3.
+        // Hor+ scaling adjusts fov_x for widescreen but preserves fov_y.
+        // fov_y = 2 * atan( (3/4) * tan(cg_fov / 2) )
+        function calcFovY(cgFov) {
+            const halfFovRad = cgFov * Math.PI / 360;
+            return 2 * Math.atan(0.75 * Math.tan(halfFovRad)) * 180 / Math.PI;
         }
 
         // State
@@ -524,19 +475,17 @@
         // DOM Elements
         const sourceSens = document.getElementById('source-sens');
         const sourceDpi = document.getElementById('source-dpi');
-        const sourceResW = document.getElementById('source-res-w');
-        const sourceResH = document.getElementById('source-res-h');
         const sourceFov = document.getElementById('source-fov');
-        const sourcePitch = document.getElementById('source-pitch');
-        const sourcePitchGroup = document.getElementById('source-pitch-group');
-        const sourceResFovRow = document.getElementById('source-res-fov-row');
+        const sourceMyaw = document.getElementById('source-myaw');
+        const sourceMpitch = document.getElementById('source-mpitch');
+        const sourceMohaaRow = document.getElementById('source-mohaa-row');
 
         const targetSens = document.getElementById('target-sens');
         const targetDpi = document.getElementById('target-dpi');
-        const targetResW = document.getElementById('target-res-w');
-        const targetResH = document.getElementById('target-res-h');
         const targetFov = document.getElementById('target-fov');
-        const targetResFovRow = document.getElementById('target-res-fov-row');
+        const targetMyaw = document.getElementById('target-myaw');
+        const targetMpitch = document.getElementById('target-mpitch');
+        const targetMohaaRow = document.getElementById('target-mohaa-row');
 
         const cm360Display = document.getElementById('cm360');
         const direction = document.getElementById('direction');
@@ -550,93 +499,80 @@
         const sourcePanel = document.getElementById('source-panel');
         const targetPanel = document.getElementById('target-panel');
 
-        // Calculate cm/360
-        function calculateCm360(sens, dpi, yaw) {
-            return (360 * 2.54) / (dpi * sens * yaw);
-        }
-
-        // Calculate sensitivity from cm/360
-        function calculateSensFromCm360(cm360, dpi, yaw) {
-            return (360 * 2.54) / (cm360 * dpi * yaw);
-        }
-
         // Main conversion function
+        // Based on OpenMoHAA CL_MouseMove() and CG_SensitivityScale():
+        //   yaw_delta = m_yaw * sensitivity * (fov_y / 75.0) * mouse_dx
+        //   cm/360 = (360 * 2.54) / (DPI * sensitivity * m_yaw * (fov_y / 75.0))
         function convert() {
             const srcSens = parseFloat(sourceSens.value) || 1;
             const srcDpi = parseFloat(sourceDpi.value) || 800;
-            const srcResW = parseFloat(sourceResW.value) || 1024;
-            const srcResH = parseFloat(sourceResH.value) || 768;
-            const srcFov = parseFloat(sourceFov.value) || 80;
             const tgtDpi = parseFloat(targetDpi.value) || 800;
-            const tgtFov = parseFloat(targetFov.value) || 80;
 
-            // Get pitch value (only applies when MOHAA is source)
-            const cs2Pitch = isMohaaSource
-                ? (parseFloat(sourcePitch.value) || 0.022)
-                : 0.022;
-
-            // Get MOHAA resolution (only MOHAA resolution matters)
-            const mohaaResW = isMohaaSource ? srcResW : (parseFloat(targetResW.value) || 1024);
-            const mohaaResH = isMohaaSource ? srcResH : (parseFloat(targetResH.value) || 768);
-            const mohaaFov = isMohaaSource ? srcFov : tgtFov;
-
-            // Get yaw values based on direction, FOV, and resolution (for MOHAA)
-            let srcYaw, tgtYaw;
+            // Read MOHAA values from whichever panel is MOHAA
+            let mohaaFov, mohaaMyaw, mohaaMpitch;
             if (isMohaaSource) {
-                srcYaw = getMohaaYaw(mohaaFov, mohaaResW, mohaaResH);
-                tgtYaw = CS2_YAW;
+                mohaaFov = parseFloat(sourceFov.value) || 80;
+                mohaaMyaw = parseFloat(sourceMyaw.value) || 0.022;
+                mohaaMpitch = parseFloat(sourceMpitch.value) || 0.022;
             } else {
-                srcYaw = CS2_YAW;
-                tgtYaw = getMohaaYaw(mohaaFov, mohaaResW, mohaaResH);
+                mohaaFov = parseFloat(targetFov.value) || 80;
+                mohaaMyaw = parseFloat(targetMyaw.value) || 0.022;
+                mohaaMpitch = parseFloat(targetMpitch.value) || 0.022;
             }
 
-            // Calculate source cm/360
-            const srcCm360 = calculateCm360(srcSens, srcDpi, srcYaw);
+            // fov_y is independent of resolution/aspect ratio (Hor+ scaling)
+            const fovY = calcFovY(mohaaFov);
 
-            // Calculate target sensitivity to match cm/360
-            let tgtSens = calculateSensFromCm360(srcCm360, tgtDpi, tgtYaw);
+            // MOHAA zoom sensitivity: fov_y / 75.0 (from CG_SensitivityScale)
+            const zoomScale = fovY / 75.0;
 
-            // Apply pitch bypass if custom pitch is set for CS2
-            let adjustedYaw = CS2_YAW;
-            let needsYawAdjustment = false;
+            // Effective yaw per unit of sensitivity (degrees per count per unit sens)
+            const mohaaEffYaw = mohaaMyaw * zoomScale;
+            const cs2EffYaw = CS2_YAW;
 
-            if (cs2Pitch !== CS2_PITCH) {
-                const pitchRatio = cs2Pitch / CS2_PITCH;
-                if (isMohaaSource) {
-                    // Converting to CS2 - adjust the target sensitivity
-                    tgtSens = tgtSens * pitchRatio;
-                    adjustedYaw = CS2_YAW / pitchRatio;
-                } else {
-                    // Converting from CS2 - the source already has pitch applied
-                    // Adjust source yaw for calculation
-                    adjustedYaw = CS2_YAW / pitchRatio;
-                }
-                needsYawAdjustment = true;
+            const srcYaw = isMohaaSource ? mohaaEffYaw : cs2EffYaw;
+            const tgtYaw = isMohaaSource ? cs2EffYaw : mohaaEffYaw;
+
+            // cm/360 based on horizontal (yaw) sensitivity
+            const srcCm360 = (360 * 2.54) / (srcDpi * srcSens * srcYaw);
+
+            // Target sensitivity to match horizontal cm/360
+            let tgtSens = (360 * 2.54) / (srcCm360 * tgtDpi * tgtYaw);
+
+            // V/H ratio bypass (MOHAA→CS2 only)
+            // If MOHAA m_pitch != m_yaw, adjust CS2 sensitivity and m_yaw
+            // to preserve both horizontal cm/360 and the V/H ratio.
+            // CS2 m_pitch is locked at 0.022, so we change m_yaw to compensate.
+            let cs2MyawAdj = CS2_YAW;
+            let needsYawAdj = false;
+
+            if (isMohaaSource && Math.abs(mohaaMpitch - mohaaMyaw) > 0.0001) {
+                // To match V/H ratio: cs2_m_pitch / cs2_m_yaw = mohaa_m_pitch / mohaa_m_yaw
+                // cs2_m_yaw = 0.022 * mohaa_m_yaw / mohaa_m_pitch
+                cs2MyawAdj = CS2_YAW * mohaaMyaw / mohaaMpitch;
+                // Adjust sensitivity to maintain horizontal cm/360 with new m_yaw
+                tgtSens = tgtSens * mohaaMpitch / mohaaMyaw;
+                needsYawAdj = true;
             }
 
             // Update UI
             targetSens.value = tgtSens.toFixed(3);
-            cm360Display.textContent = srcCm360.toFixed(3) + ' cm/360°';
+            cm360Display.textContent = srcCm360.toFixed(3) + ' cm/360\u00B0';
 
             // Update commands
             if (isMohaaSource) {
-                commandText.textContent = `sensitivity "${srcSens}"`;
-                cs2CommandText.textContent = `sensitivity "${tgtSens.toFixed(3)}"`;
-                if (needsYawAdjustment) {
-                    yawInline.style.display = 'inline';
-                    yawCommandText.textContent = `m_yaw "${adjustedYaw.toFixed(5)}"`;
-                } else {
-                    yawInline.style.display = 'none';
-                }
+                commandText.textContent = 'sensitivity "' + srcSens + '"';
+                cs2CommandText.textContent = 'sensitivity "' + tgtSens.toFixed(3) + '"';
             } else {
-                commandText.textContent = `sensitivity "${tgtSens.toFixed(3)}"`;
-                cs2CommandText.textContent = `sensitivity "${srcSens}"`;
-                if (needsYawAdjustment) {
-                    yawInline.style.display = 'inline';
-                    yawCommandText.textContent = `m_yaw "${adjustedYaw.toFixed(5)}"`;
-                } else {
-                    yawInline.style.display = 'none';
-                }
+                commandText.textContent = 'sensitivity "' + tgtSens.toFixed(3) + '"';
+                cs2CommandText.textContent = 'sensitivity "' + srcSens + '"';
+            }
+
+            if (needsYawAdj) {
+                yawInline.style.display = 'inline';
+                yawCommandText.textContent = 'm_yaw "' + cs2MyawAdj.toFixed(6) + '"';
+            } else {
+                yawInline.style.display = 'none';
             }
         }
 
@@ -652,49 +588,43 @@
             const targetHeader = targetPanel.querySelector('.game-header');
 
             if (isMohaaSource) {
-                sourceHeader.innerHTML = `
-                    <div class="game-icon mohaa-icon">MOH</div>
-                    <div>
-                        <div class="game-title">Medal of Honor: Allied Assault</div>
-                        <div class="game-subtitle">Source Game</div>
-                    </div>
-                `;
-                targetHeader.innerHTML = `
-                    <div class="game-icon cs2-icon">CS2</div>
-                    <div>
-                        <div class="game-title">Counter-Strike 2</div>
-                        <div class="game-subtitle">Target Game</div>
-                    </div>
-                `;
-                // Sync resolution from target to source (keep MOHAA resolution)
-                sourceResW.value = targetResW.value;
-                sourceResH.value = targetResH.value;
-                sourceResFovRow.style.display = 'grid';
-                sourcePitchGroup.style.display = 'block';
-                targetResFovRow.style.display = 'none';
+                sourceHeader.innerHTML = '\
+                    <div class="game-icon mohaa-icon">MOH</div>\
+                    <div>\
+                        <div class="game-title">Medal of Honor: Allied Assault</div>\
+                        <div class="game-subtitle">Source Game</div>\
+                    </div>';
+                targetHeader.innerHTML = '\
+                    <div class="game-icon cs2-icon">CS2</div>\
+                    <div>\
+                        <div class="game-title">Counter-Strike 2</div>\
+                        <div class="game-subtitle">Target Game</div>\
+                    </div>';
+                // Sync MOHAA values from target to source
                 sourceFov.value = targetFov.value;
+                sourceMyaw.value = targetMyaw.value;
+                sourceMpitch.value = targetMpitch.value;
+                sourceMohaaRow.style.display = 'grid';
+                targetMohaaRow.style.display = 'none';
             } else {
-                sourceHeader.innerHTML = `
-                    <div class="game-icon cs2-icon">CS2</div>
-                    <div>
-                        <div class="game-title">Counter-Strike 2</div>
-                        <div class="game-subtitle">Source Game</div>
-                    </div>
-                `;
-                targetHeader.innerHTML = `
-                    <div class="game-icon mohaa-icon">MOH</div>
-                    <div>
-                        <div class="game-title">Medal of Honor: Allied Assault</div>
-                        <div class="game-subtitle">Target Game</div>
-                    </div>
-                `;
-                // Sync resolution from source to target (keep MOHAA resolution)
-                targetResW.value = sourceResW.value;
-                targetResH.value = sourceResH.value;
-                sourceResFovRow.style.display = 'none';
-                sourcePitchGroup.style.display = 'none';
-                targetResFovRow.style.display = 'grid';
+                sourceHeader.innerHTML = '\
+                    <div class="game-icon cs2-icon">CS2</div>\
+                    <div>\
+                        <div class="game-title">Counter-Strike 2</div>\
+                        <div class="game-subtitle">Source Game</div>\
+                    </div>';
+                targetHeader.innerHTML = '\
+                    <div class="game-icon mohaa-icon">MOH</div>\
+                    <div>\
+                        <div class="game-title">Medal of Honor: Allied Assault</div>\
+                        <div class="game-subtitle">Target Game</div>\
+                    </div>';
+                // Sync MOHAA values from source to target
                 targetFov.value = sourceFov.value;
+                targetMyaw.value = sourceMyaw.value;
+                targetMpitch.value = sourceMpitch.value;
+                sourceMohaaRow.style.display = 'none';
+                targetMohaaRow.style.display = 'grid';
             }
 
             sourceSens.value = 1;
@@ -706,7 +636,7 @@
             navigator.clipboard.writeText(commandText.textContent);
             const btn = mohaaCommand.querySelector('.copy-btn');
             btn.textContent = 'Copied!';
-            setTimeout(() => btn.textContent = 'Copy', 1500);
+            setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
         }
 
         function copyCs2Command() {
@@ -714,20 +644,19 @@
             navigator.clipboard.writeText(text);
             const btn = cs2Command.querySelector('.copy-btn');
             btn.textContent = 'Copied!';
-            setTimeout(() => btn.textContent = 'Copy', 1500);
+            setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
         }
 
         // Event listeners
         sourceSens.addEventListener('input', convert);
         sourceDpi.addEventListener('input', convert);
-        sourceResW.addEventListener('input', convert);
-        sourceResH.addEventListener('input', convert);
-        targetDpi.addEventListener('input', convert);
-        targetResW.addEventListener('input', convert);
-        targetResH.addEventListener('input', convert);
         sourceFov.addEventListener('input', convert);
+        sourceMyaw.addEventListener('input', convert);
+        sourceMpitch.addEventListener('input', convert);
+        targetDpi.addEventListener('input', convert);
         targetFov.addEventListener('input', convert);
-        sourcePitch.addEventListener('input', convert);
+        targetMyaw.addEventListener('input', convert);
+        targetMpitch.addEventListener('input', convert);
 
         document.getElementById('swap-btn').addEventListener('click', swapGames);
 
