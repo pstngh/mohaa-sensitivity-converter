@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenMoHAA Cvar Browser</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: rgba(30, 30, 45, 1);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 8px; color: #fff; font-size: 2rem; }
+        .subtitle { text-align: center; color: #999; margin-bottom: 24px; }
+        .toolbar {
+            background: rgba(20, 20, 35, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+        }
+        .toolbar input {
+            width: 100%; padding: 12px 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff;
+        }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        button {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #e0e0e0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+        }
+        button.active {
+            background: rgba(74, 158, 255, 0.25);
+            border-color: rgba(74, 158, 255, 0.7);
+            color: #9ec9ff;
+        }
+        .meta {
+            margin-bottom: 12px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        .table-wrap {
+            background: rgba(20, 20, 35, 0.9);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            overflow: auto;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 950px; }
+        th, td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; vertical-align: top; }
+        th { color: #9ec9ff; font-weight: 600; font-size: 0.9rem; }
+        td { font-size: 0.88rem; color: #ddd; }
+        .mono { font-family: 'Courier New', monospace; color: #8dffa9; }
+        .badge {
+            display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 0.75rem;
+            border: 1px solid transparent;
+        }
+        .stable { background: rgba(93, 196, 93, 0.15); border-color: rgba(93, 196, 93, 0.5); color: #8ce88c; }
+        .experimental { background: rgba(255, 192, 74, 0.15); border-color: rgba(255, 192, 74, 0.55); color: #ffd079; }
+        .broken { background: rgba(255, 84, 84, 0.15); border-color: rgba(255, 84, 84, 0.55); color: #ff9d9d; }
+        .unknown { background: rgba(160,160,160,0.15); border-color: rgba(160,160,160,0.55); color: #cfcfcf; }
+        .no-results { padding: 18px; color: #aaa; }
+        .footer-note { margin-top: 16px; color: #888; font-size: 0.85rem; }
+        a { color: #7eb8ff; }
+        @media (max-width: 900px) { .toolbar { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OpenMoHAA Cvar Browser</h1>
+        <p class="subtitle">Source-derived cvar index with status flags (stable/experimental/broken) and SH/BT filtering.</p>
+
+        <div class="toolbar">
+            <input id="search" type="text" placeholder="Autofilter: type cvar name, description, default value, or flags...">
+            <div class="btn-group">
+                <button id="mode-all" class="active">All modes</button>
+                <button id="mode-sh">Only SH</button>
+                <button id="mode-bt">Only BT</button>
+            </div>
+        </div>
+
+        <div class="meta" id="meta">Loading cvars…</div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Default</th>
+                        <th>Flags</th>
+                        <th>Mode</th>
+                        <th>Status</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+            </table>
+            <div id="empty" class="no-results" style="display:none;">No cvars match the current filter.</div>
+        </div>
+
+        <p class="footer-note">This page is designed to use a static parser output file at <code>data/openmohaa-cvars.json</code>. It intentionally avoids runtime <code>cvarlist</code>/<code>listallcvars</code> output because those are incomplete.</p>
+        <p class="footer-note"><a href="index.html">Back to sensitivity converter</a></p>
+    </div>
+
+    <script>
+        const meta = document.getElementById('meta');
+        const rows = document.getElementById('rows');
+        const empty = document.getElementById('empty');
+        const search = document.getElementById('search');
+        const modeAll = document.getElementById('mode-all');
+        const modeSh = document.getElementById('mode-sh');
+        const modeBt = document.getElementById('mode-bt');
+
+        let cvars = [];
+        let currentMode = 'all';
+
+        function esc(text) {
+            return String(text ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            [modeAll, modeSh, modeBt].forEach(btn => btn.classList.remove('active'));
+            if (mode === 'sh') modeSh.classList.add('active');
+            else if (mode === 'bt') modeBt.classList.add('active');
+            else modeAll.classList.add('active');
+            render();
+        }
+
+        function statusClass(status) {
+            if (status === 'broken') return 'broken';
+            if (status === 'experimental') return 'experimental';
+            if (status === 'stable') return 'stable';
+            return 'unknown';
+        }
+
+        function modePass(item) {
+            const mode = (item.mode || 'unknown').toLowerCase();
+            if (currentMode === 'sh') return mode === 'sh' || mode === 'both';
+            if (currentMode === 'bt') return mode === 'bt' || mode === 'both';
+            return true;
+        }
+
+        function textPass(item, q) {
+            if (!q) return true;
+            const blob = [item.name, item.description, item.defaultValue, (item.flags || []).join(' '), item.mode, item.status].join(' ').toLowerCase();
+            return blob.includes(q);
+        }
+
+        function render() {
+            const q = search.value.trim().toLowerCase();
+            const filtered = cvars.filter(item => modePass(item) && textPass(item, q));
+            meta.textContent = `Showing ${filtered.length} / ${cvars.length} cvars`;
+            rows.innerHTML = filtered.map(item => {
+                const src = item.source || {};
+                const srcText = src.file ? `${src.file}:${src.line || '?'}` : 'n/a';
+                const flags = (item.flags && item.flags.length) ? item.flags.join(', ') : 'none';
+                const status = item.status || 'unknown';
+                return `<tr>
+                    <td class="mono">${esc(item.name)}</td>
+                    <td>${esc(item.description || 'No description available.')}</td>
+                    <td class="mono">${esc(item.defaultValue ?? 'n/a')}</td>
+                    <td>${esc(flags)}</td>
+                    <td>${esc((item.mode || 'unknown').toUpperCase())}</td>
+                    <td><span class="badge ${statusClass(status)}">${esc(status)}</span></td>
+                    <td class="mono">${esc(srcText)}</td>
+                </tr>`;
+            }).join('');
+            empty.style.display = filtered.length ? 'none' : 'block';
+        }
+
+        modeAll.addEventListener('click', () => setMode('all'));
+        modeSh.addEventListener('click', () => setMode('sh'));
+        modeBt.addEventListener('click', () => setMode('bt'));
+
+        let debounceTimer;
+        search.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(render, 120);
+        });
+
+        async function loadData() {
+            try {
+                const response = await fetch('data/openmohaa-cvars.json');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                cvars = Array.isArray(data) ? data : (data.cvars || []);
+                render();
+            } catch (err) {
+                meta.textContent = 'Failed to load cvar data: ' + err.message;
+                cvars = [];
+                render();
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
