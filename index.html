@@ -591,16 +591,16 @@
             }
 
             // Update UI
-            targetSens.value = tgtSens.toFixed(3);
+            targetSens.value = tgtSens.toFixed(isMohaaSource ? 6 : 3);
             cm360Display.textContent = srcCm360.toFixed(3) + ' cm/360\u00B0';
 
             // Update commands
             if (isMohaaSource) {
                 commandText.textContent = 'sensitivity "' + srcSens + '"';
-                csCommandText.textContent = 'sensitivity "' + tgtSens.toFixed(3) + '"';
+                csCommandText.textContent = 'sensitivity "' + tgtSens.toFixed(6) + '"';
             } else {
                 commandText.textContent = 'sensitivity "' + tgtSens.toFixed(3) + '"';
-                csCommandText.textContent = 'sensitivity "' + srcSens + '"';
+                csCommandText.textContent = 'sensitivity "' + srcSens.toFixed(6) + '"';
             }
 
             if (needsYawAdj) {
