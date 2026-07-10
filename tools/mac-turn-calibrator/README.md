@@ -7,10 +7,11 @@ yaw coefficient.
 
 ## Compatibility
 
-The tool uses macOS Core Graphics mouse events. It works only when the game
-accepts synthetic macOS mouse movement. A game that reads a physical mouse
-directly through raw HID may ignore the generated movement; software alone
-cannot bypass that boundary reliably.
+The tool uses macOS Core Graphics mouse events. Each generated packet changes
+the cursor position and carries the matching relative delta. It works only when
+the game accepts synthetic macOS mouse movement. A game that reads a physical
+mouse directly through raw HID may ignore the generated movement; software
+alone cannot bypass that boundary reliably.
 
 Use this only in an offline, private, or bot match. Close the tool before normal
 gameplay.

@@ -292,7 +292,10 @@ private final class Calibrator {
               let event = CGEvent(
                 mouseEventSource: source,
                 mouseType: .mouseMoved,
-                mouseCursorPosition: currentEvent.location,
+                mouseCursorPosition: CGPoint(
+                    x: currentEvent.location.x + CGFloat(delta),
+                    y: currentEvent.location.y
+                ),
                 mouseButton: .left
               ) else {
             return false
