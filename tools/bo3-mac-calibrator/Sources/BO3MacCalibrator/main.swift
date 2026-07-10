@@ -257,10 +257,10 @@ private final class Calibrator {
     private func handle(value: IOHIDValue) {
         let element = IOHIDValueGetElement(value)
         guard IOHIDElementGetUsagePage(element) == UInt32(kHIDPage_GenericDesktop),
-              IOHIDElementGetUsage(element) == UInt32(kHIDUsage_GD_X),
-              let device = IOHIDElementGetDevice(element) else {
+              IOHIDElementGetUsage(element) == UInt32(kHIDUsage_GD_X) else {
             return
         }
+        let device = IOHIDElementGetDevice(element)
 
         let deviceName = (IOHIDDeviceGetProperty(
             device,
