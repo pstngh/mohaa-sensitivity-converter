@@ -39,8 +39,9 @@ private struct Options {
       --help                 Show this help.
 
     Hotkeys:
-      F8  Start or stop a capture.
-      F9  Quit.
+      Control+Option+C  Start or stop a capture.
+      Control+Option+Q  Quit.
+      F8 / F9           Alternate capture / quit keys.
     """
 
     static func parse(_ arguments: [String]) throws -> Options {
@@ -212,11 +213,20 @@ private final class Calibrator {
     private func installHotkeys() {
         let handler: (NSEvent) -> Void = { [weak self] event in
             guard !event.isARepeat else { return }
+            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             switch Int(event.keyCode) {
             case Int(kVK_F8):
                 self?.toggleCapture()
             case Int(kVK_F9):
                 self?.quit()
+            case Int(kVK_ANSI_C):
+                if modifiers.contains(.control) && modifiers.contains(.option) {
+                    self?.toggleCapture()
+                }
+            case Int(kVK_ANSI_Q):
+                if modifiers.contains(.control) && modifiers.contains(.option) {
+                    self?.quit()
+                }
             default:
                 break
             }
@@ -247,9 +257,11 @@ private final class Calibrator {
         }
         print("Output: \(expandedOutputPath)")
         print("")
-        print("Press F8, perform exactly \(format(options.turns, decimals: 3)) " +
-              "full turns in one direction, then press F8 again.")
-        print("Press F9 to quit. No mouse input is generated or modified.")
+        print("Press Control+Option+C, perform exactly " +
+              "\(format(options.turns, decimals: 3)) full turns in one direction, " +
+              "then press Control+Option+C again.")
+        print("Press Control+Option+Q to quit. F8/F9 are alternate hotkeys.")
+        print("No mouse input is generated or modified.")
         print("")
         fflush(stdout)
     }
@@ -385,7 +397,7 @@ private final class Calibrator {
         } catch {
             print("Could not save calibration: \(error)")
         }
-        print("Press F8 to run another capture or F9 to quit.\n")
+        print("Press Control+Option+C to capture again or Control+Option+Q to quit.\n")
         fflush(stdout)
     }
 
