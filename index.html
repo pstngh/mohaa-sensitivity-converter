@@ -363,7 +363,7 @@
                 <div class="input-row">
                     <div class="input-group">
                         <label>Sensitivity</label>
-                        <input type="number" id="source-sens" value="1" step="0.01" min="0.01">
+                        <input type="number" id="source-sens" value="1.5" step="0.01" min="0.01">
                     </div>
                     <div class="input-group">
                         <label>DPI</label>
@@ -382,7 +382,7 @@
                     </div>
                     <div class="input-group">
                         <label>m_pitch</label>
-                        <input type="number" id="source-mpitch" value="0.022" step="0.001" min="0.001">
+                        <input type="number" id="source-mpitch" value="0.018" step="0.001" min="0.001">
                     </div>
                 </div>
 
@@ -433,7 +433,7 @@
                     </div>
                     <div class="input-group">
                         <label>m_pitch</label>
-                        <input type="number" id="target-mpitch" value="0.022" step="0.001" min="0.001">
+                        <input type="number" id="target-mpitch" value="0.018" step="0.001" min="0.001">
                     </div>
                 </div>
 
@@ -543,11 +543,11 @@
             if (isMohaaSource) {
                 mohaaFov = parseFloat(sourceFov.value) || 80;
                 mohaaMyaw = parseFloat(sourceMyaw.value) || 0.022;
-                mohaaMpitch = parseFloat(sourceMpitch.value) || 0.022;
+                mohaaMpitch = parseFloat(sourceMpitch.value) || 0.018;
             } else {
                 mohaaFov = parseFloat(targetFov.value) || 80;
                 mohaaMyaw = parseFloat(targetMyaw.value) || 0.022;
-                mohaaMpitch = parseFloat(targetMpitch.value) || 0.022;
+                mohaaMpitch = parseFloat(targetMpitch.value) || 0.018;
             }
 
             // Read CS FOV from whichever panel is CS. Custom FOV scales hipfire
