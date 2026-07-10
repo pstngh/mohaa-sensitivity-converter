@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Carbon.HIToolbox
 import Foundation
 import IOKit.hid
@@ -138,8 +139,8 @@ private final class Calibrator {
     private let options: Options
     private let lock = NSLock()
     private var manager: IOHIDManager?
-    private var globalKeyMonitor: Any?
-    private var localKeyMonitor: Any?
+    private var eventTap: CFMachPort?
+    private var hotkeyRunLoopSource: CFRunLoopSource?
     private var isCapturing = false
     private var netXCounts: Int64 = 0
     private var absoluteXCounts: Int64 = 0
@@ -151,11 +152,11 @@ private final class Calibrator {
     }
 
     deinit {
-        if let globalKeyMonitor {
-            NSEvent.removeMonitor(globalKeyMonitor)
+        if let hotkeyRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), hotkeyRunLoopSource, .commonModes)
         }
-        if let localKeyMonitor {
-            NSEvent.removeMonitor(localKeyMonitor)
+        if let eventTap {
+            CGEvent.tapEnable(tap: eventTap, enable: false)
         }
         if let manager {
             IOHIDManagerUnscheduleFromRunLoop(
@@ -206,42 +207,87 @@ private final class Calibrator {
         }
         manager = hidManager
 
-        installHotkeys()
+        try installHotkeys()
         printIntroduction()
     }
 
-    private func installHotkeys() {
-        let handler: (NSEvent) -> Void = { [weak self] event in
-            guard !event.isARepeat else { return }
-            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            switch Int(event.keyCode) {
-            case Int(kVK_F8):
-                self?.toggleCapture()
-            case Int(kVK_F9):
-                self?.quit()
-            case Int(kVK_ANSI_8):
-                if modifiers.contains(.command) && modifiers.contains(.shift) {
-                    self?.toggleCapture()
-                }
-            case Int(kVK_ANSI_9):
-                if modifiers.contains(.command) && modifiers.contains(.shift) {
-                    self?.quit()
-                }
-            default:
-                break
-            }
+    private func installHotkeys() throws {
+        let promptOptions = [
+            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true
+        ] as CFDictionary
+        guard AXIsProcessTrustedWithOptions(promptOptions) else {
+            throw CLIError.message(
+                "Accessibility permission is required. Approve Terminal (or this " +
+                "executable), completely restart it, and run again."
+            )
         }
 
-        globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: .keyDown,
-            handler: handler
-        )
-        localKeyMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: .keyDown
-        ) { event in
-            handler(event)
-            return event
+        let mask = CGEventMask(1) << CGEventType.keyDown.rawValue
+        let context = Unmanaged.passUnretained(self).toOpaque()
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: mask,
+            callback: { _, type, event, context in
+                guard let context else {
+                    return Unmanaged.passUnretained(event)
+                }
+                let calibrator = Unmanaged<Calibrator>
+                    .fromOpaque(context)
+                    .takeUnretainedValue()
+
+                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                    if let eventTap = calibrator.eventTap {
+                        CGEvent.tapEnable(tap: eventTap, enable: true)
+                    }
+                    return Unmanaged.passUnretained(event)
+                }
+
+                guard type == .keyDown else {
+                    return Unmanaged.passUnretained(event)
+                }
+                return calibrator.handleHotkey(event)
+                    ? nil
+                    : Unmanaged.passUnretained(event)
+            },
+            userInfo: context
+        ) else {
+            throw CLIError.message(
+                "Could not create the global hotkey event tap. Check Accessibility permission."
+            )
         }
+
+        guard let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0) else {
+            throw CLIError.message("Could not create the hotkey run-loop source.")
+        }
+
+        eventTap = tap
+        hotkeyRunLoopSource = source
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+    }
+
+    private func handleHotkey(_ event: CGEvent) -> Bool {
+        let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
+        let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+        let flags = event.flags
+
+        if keyCode == Int(kVK_F8) ||
+            (keyCode == Int(kVK_ANSI_8) &&
+             flags.contains(.maskCommand) && flags.contains(.maskShift)) {
+            if !isRepeat { toggleCapture() }
+            return true
+        }
+
+        if keyCode == Int(kVK_F9) ||
+            (keyCode == Int(kVK_ANSI_9) &&
+             flags.contains(.maskCommand) && flags.contains(.maskShift)) {
+            if !isRepeat { quit() }
+            return true
+        }
+
+        return false
     }
 
     private func printIntroduction() {
