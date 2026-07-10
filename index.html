@@ -473,7 +473,7 @@
                 <li><code>fov_y = 2 × atan(0.75 × tan(cg_fov / 2))</code></li>
                 <li>cg_fov is horizontal FOV at 4:3. The engine uses Hor+ scaling, so fov_y (and sensitivity) stays the same at any aspect ratio or resolution.</li>
             </ul>
-            <p style="margin-top: 15px;"><strong>CS:</strong> Uses a fixed yaw of 0.022 with no FOV-dependent scaling. <code>degrees_per_count = sensitivity × 0.022</code>. The CS FOV option stays with the game when swapping, but does not change cm/360.</p>
+            <p style="margin-top: 15px;"><strong>CS:</strong> Uses a base yaw of 0.022 and scales custom FOV relative to the default 90°. <code>degrees_per_count = sensitivity × 0.022 × (FOV / 90)</code>. This assumes <code>zoom_sensitivity_ratio 1</code>; FOV 90 leaves the sensitivity unchanged.</p>
             <p style="margin-top: 15px;"><strong>V/H ratio bypass:</strong> If your MOHAA m_pitch differs from m_yaw, the vertical/horizontal sensitivity ratio won't match in CS (which has m_pitch locked at 0.022). The converter adjusts CS's sensitivity and m_yaw to preserve both your horizontal cm/360 and your V/H ratio.</p>
         </div>
 
@@ -550,6 +550,11 @@
                 mohaaMpitch = parseFloat(targetMpitch.value) || 0.022;
             }
 
+            // Read CS FOV from whichever panel is CS. Custom FOV scales hipfire
+            // sensitivity relative to the default 90 when zoom_sensitivity_ratio is 1.
+            const csFov = parseFloat(isMohaaSource ? targetCsFov.value : sourceCsFov.value) || 90;
+            const csFovScale = csFov / 90.0;
+
             // fov_y is independent of resolution/aspect ratio (Hor+ scaling)
             const fovY = calcFovY(mohaaFov);
 
@@ -558,7 +563,7 @@
 
             // Effective yaw per unit of sensitivity (degrees per count per unit sens)
             const mohaaEffYaw = mohaaMyaw * zoomScale;
-            const csEffYaw = CS_YAW;
+            const csEffYaw = CS_YAW * csFovScale;
 
             const srcYaw = isMohaaSource ? mohaaEffYaw : csEffYaw;
             const tgtYaw = isMohaaSource ? csEffYaw : mohaaEffYaw;
