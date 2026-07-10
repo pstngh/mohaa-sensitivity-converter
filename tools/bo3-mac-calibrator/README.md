@@ -53,11 +53,11 @@ swift run -c release bo3-mac-calibrator \
    options are available.
 3. Use a reproducible hipfire view and note the sensitivity and FOV.
 4. Start the calibrator, then focus Black Ops 3.
-5. Press **Control+Option+C**.
+5. Press **Command+Shift+8**.
 6. Turn in one direction for exactly the number of rotations supplied with
    `--turns`. Ten rotations substantially reduces alignment error.
-7. Press **Control+Option+C** again.
-8. Press **Control+Option+Q** to quit, or repeat the capture.
+7. Press **Command+Shift+8** again.
+8. Press **Command+Shift+9** to quit, or repeat the capture.
 
 **F8** and **F9** remain alternate capture and quit keys. On keyboards where
 the function row controls media features, hold **Fn** while pressing them.
@@ -94,7 +94,7 @@ the desired metric.
 ## Troubleshooting
 
 - **Hotkeys do nothing:** grant Accessibility permission, completely quit
-  Terminal, and open it again. Try **Control+Option+C** before the function keys.
+  Terminal, and open it again. Try **Command+Shift+8** before the function keys.
 - **No counts are recorded:** grant Input Monitoring permission and restart the
   tool. Try `--device` if multiple mouse devices are present.
 - **Counts stop when the game opens:** verify the permission applies to the exact

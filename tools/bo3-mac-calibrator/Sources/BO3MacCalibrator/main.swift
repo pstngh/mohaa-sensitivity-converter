@@ -39,9 +39,9 @@ private struct Options {
       --help                 Show this help.
 
     Hotkeys:
-      Control+Option+C  Start or stop a capture.
-      Control+Option+Q  Quit.
-      F8 / F9           Alternate capture / quit keys.
+      Command+Shift+8  Start or stop a capture.
+      Command+Shift+9  Quit.
+      F8 / F9          Alternate capture / quit keys.
     """
 
     static func parse(_ arguments: [String]) throws -> Options {
@@ -219,12 +219,12 @@ private final class Calibrator {
                 self?.toggleCapture()
             case Int(kVK_F9):
                 self?.quit()
-            case Int(kVK_ANSI_C):
-                if modifiers.contains(.control) && modifiers.contains(.option) {
+            case Int(kVK_ANSI_8):
+                if modifiers.contains(.command) && modifiers.contains(.shift) {
                     self?.toggleCapture()
                 }
-            case Int(kVK_ANSI_Q):
-                if modifiers.contains(.control) && modifiers.contains(.option) {
+            case Int(kVK_ANSI_9):
+                if modifiers.contains(.command) && modifiers.contains(.shift) {
                     self?.quit()
                 }
             default:
@@ -257,10 +257,10 @@ private final class Calibrator {
         }
         print("Output: \(expandedOutputPath)")
         print("")
-        print("Press Control+Option+C, perform exactly " +
+        print("Press Command+Shift+8, perform exactly " +
               "\(format(options.turns, decimals: 3)) full turns in one direction, " +
-              "then press Control+Option+C again.")
-        print("Press Control+Option+Q to quit. F8/F9 are alternate hotkeys.")
+              "then press Command+Shift+8 again.")
+        print("Press Command+Shift+9 to quit. F8/F9 are alternate hotkeys.")
         print("No mouse input is generated or modified.")
         print("")
         fflush(stdout)
@@ -397,7 +397,7 @@ private final class Calibrator {
         } catch {
             print("Could not save calibration: \(error)")
         }
-        print("Press Control+Option+C to capture again or Control+Option+Q to quit.\n")
+        print("Press Command+Shift+8 to capture again or Command+Shift+9 to quit.\n")
         fflush(stdout)
     }
 
