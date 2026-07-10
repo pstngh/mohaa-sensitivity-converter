@@ -578,6 +578,10 @@
 
         // Swap source and target games
         function swapGames() {
+            const previousTargetSens = targetSens.value;
+            const previousSourceDpi = sourceDpi.value;
+            const previousTargetDpi = targetDpi.value;
+
             isMohaaSource = !isMohaaSource;
 
             direction.innerHTML = isMohaaSource
@@ -627,7 +631,9 @@
                 targetMohaaRow.style.display = 'grid';
             }
 
-            sourceSens.value = 1;
+            sourceSens.value = previousTargetSens;
+            sourceDpi.value = previousTargetDpi;
+            targetDpi.value = previousSourceDpi;
             convert();
         }
 
