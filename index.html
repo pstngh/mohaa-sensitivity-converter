@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOHAA ↔ CS Sensitivity Converter</title>
+    <title>MOHAA Sensitivity Converter</title>
     <style>
         * {
             box-sizing: border-box;
@@ -88,6 +88,11 @@
 
         .cs-icon {
             background: linear-gradient(135deg, #ff6b00, #ff9500);
+            color: #fff;
+        }
+
+        .bo3-icon {
+            background: linear-gradient(135deg, #ff7a18, #8b2b12);
             color: #fff;
         }
 
@@ -321,6 +326,25 @@
             color: #4a9eff;
         }
 
+        .game-picker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: -8px 0 20px;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+
+        .game-picker select {
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 7px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
         footer {
             text-align: center;
             margin-top: 40px;
@@ -342,11 +366,19 @@
 </head>
 <body>
     <div class="container">
-        <h1>MOHAA ↔ CS Sensitivity Converter</h1>
-        <p class="subtitle">Convert your sensitivity between Medal of Honor: Allied Assault and Counter-Strike</p>
+        <h1>MOHAA Sensitivity Converter</h1>
+        <p class="subtitle">Convert Medal of Honor: Allied Assault sensitivity to and from other games</p>
 
         <div class="direction-indicator" id="direction">
             Converting: <strong>MOHAA → CS</strong>
+        </div>
+
+        <div class="game-picker">
+            <label for="other-game">Other game</label>
+            <select id="other-game">
+                <option value="cs">Counter-Strike</option>
+                <option value="bo3mac">Black Ops 3 (Mac)</option>
+            </select>
         </div>
 
         <div class="converter-wrapper">
@@ -458,7 +490,7 @@
             </div>
 
             <div class="command-box" id="cs-command">
-                <span class="command-label">CS:</span> <code id="cs-command-text">sensitivity "1"</code><span id="yaw-inline" style="display: none;">; <code id="yaw-command-text">m_yaw "0.022"</code></span>
+                <span class="command-label" id="other-command-label">CS:</span> <code id="cs-command-text">sensitivity "1"</code><span id="yaw-inline" style="display: none;">; <code id="yaw-command-text">m_yaw "0.022"</code></span>
                 <button class="copy-btn" onclick="copyCsCommand()">Copy</button>
             </div>
         </div>
@@ -474,6 +506,7 @@
                 <li>cg_fov is horizontal FOV at 4:3. The engine uses Hor+ scaling, so fov_y (and sensitivity) stays the same at any aspect ratio or resolution.</li>
             </ul>
             <p style="margin-top: 15px;"><strong>CS:</strong> Uses a base yaw of 0.022 and scales custom FOV relative to the default 90°. <code>degrees_per_count = sensitivity × 0.022 × (FOV / 90)</code>. This assumes <code>zoom_sensitivity_ratio 1</code>; FOV 90 leaves the sensitivity unchanged.</p>
+            <p style="margin-top: 15px;"><strong>Black Ops 3 (Mac):</strong> Uses the measured hipfire yaw <code>360 / 12579 = 0.0286191271</code> degrees per count per sensitivity unit. The calibration was validated in both directions at sensitivity 1, 800 DPI, and FOV 80.</p>
             <p style="margin-top: 15px;"><strong>V/H ratio bypass:</strong> If your MOHAA m_pitch differs from m_yaw, the vertical/horizontal sensitivity ratio won't match in CS (which has m_pitch locked at 0.022). The converter adjusts CS's sensitivity and m_yaw to preserve both your horizontal cm/360 and your V/H ratio.</p>
         </div>
 
@@ -485,6 +518,23 @@
     <script>
         // CS fixed yaw/pitch
         const CS_YAW = 0.022;
+        // Measured on Black Ops 3 for macOS: sensitivity 1 produced exactly
+        // 12,579 counts/360 in both horizontal directions at FOV 80.
+        const BO3_MAC_YAW = 360 / 12579;
+        const OTHER_GAMES = {
+            cs: {
+                shortName: 'CS',
+                name: 'Counter-Strike',
+                iconClass: 'cs-icon',
+                iconText: 'CS'
+            },
+            bo3mac: {
+                shortName: 'BO3 Mac',
+                name: 'Black Ops 3 (Mac)',
+                iconClass: 'bo3-icon',
+                iconText: 'BO3'
+            }
+        };
 
         // Calculate vertical FOV from cg_fov (horizontal FOV at 4:3)
         // From OpenMoHAA CG_CalcFov(): cg_fov is treated as horizontal FOV at 4:3.
@@ -525,9 +575,44 @@
         const csCommand = document.getElementById('cs-command');
         const yawInline = document.getElementById('yaw-inline');
         const yawCommandText = document.getElementById('yaw-command-text');
+        const otherCommandLabel = document.getElementById('other-command-label');
+        const otherGameSelect = document.getElementById('other-game');
 
         const sourcePanel = document.getElementById('source-panel');
         const targetPanel = document.getElementById('target-panel');
+
+        function selectedOtherGame() {
+            return OTHER_GAMES[otherGameSelect.value];
+        }
+
+        function otherGameHeader(role) {
+            const game = selectedOtherGame();
+            return '\
+                <div class="game-icon ' + game.iconClass + '">' + game.iconText + '</div>\
+                <div>\
+                    <div class="game-title">' + game.name + '</div>\
+                    <div class="game-subtitle">' + role + '</div>\
+                </div>';
+        }
+
+        function updateOtherGameUI() {
+            const game = selectedOtherGame();
+            const otherIsCs = otherGameSelect.value === 'cs';
+
+            direction.innerHTML = isMohaaSource
+                ? 'Converting: <strong>MOHAA → ' + game.shortName + '</strong>'
+                : 'Converting: <strong>' + game.shortName + ' → MOHAA</strong>';
+            otherCommandLabel.textContent = game.shortName + ':';
+
+            if (isMohaaSource) {
+                targetPanel.querySelector('.game-header').innerHTML = otherGameHeader('Target Game');
+            } else {
+                sourcePanel.querySelector('.game-header').innerHTML = otherGameHeader('Source Game');
+            }
+
+            sourceCsRow.style.display = !isMohaaSource && otherIsCs ? 'grid' : 'none';
+            targetCsRow.style.display = isMohaaSource && otherIsCs ? 'grid' : 'none';
+        }
 
         // Main conversion function
         // Based on OpenMoHAA CL_MouseMove() and CG_SensitivityScale():
@@ -537,6 +622,7 @@
             const srcSens = parseFloat(sourceSens.value) || 1;
             const srcDpi = parseFloat(sourceDpi.value) || 800;
             const tgtDpi = parseFloat(targetDpi.value) || 800;
+            const otherGame = otherGameSelect.value;
 
             // Read MOHAA values from whichever panel is MOHAA
             let mohaaFov, mohaaMyaw, mohaaMpitch;
@@ -563,10 +649,12 @@
 
             // Effective yaw per unit of sensitivity (degrees per count per unit sens)
             const mohaaEffYaw = mohaaMyaw * zoomScale;
-            const csEffYaw = CS_YAW * csFovScale;
+            const otherEffYaw = otherGame === 'cs'
+                ? CS_YAW * csFovScale
+                : BO3_MAC_YAW;
 
-            const srcYaw = isMohaaSource ? mohaaEffYaw : csEffYaw;
-            const tgtYaw = isMohaaSource ? csEffYaw : mohaaEffYaw;
+            const srcYaw = isMohaaSource ? mohaaEffYaw : otherEffYaw;
+            const tgtYaw = isMohaaSource ? otherEffYaw : mohaaEffYaw;
 
             // cm/360 based on horizontal (yaw) sensitivity
             const srcCm360 = (360 * 2.54) / (srcDpi * srcSens * srcYaw);
@@ -581,7 +669,7 @@
             let csMyawAdj = CS_YAW;
             let needsYawAdj = false;
 
-            if (isMohaaSource && Math.abs(mohaaMpitch - mohaaMyaw) > 0.0001) {
+            if (isMohaaSource && otherGame === 'cs' && Math.abs(mohaaMpitch - mohaaMyaw) > 0.0001) {
                 // To match V/H ratio: cs_m_pitch / cs_m_yaw = mohaa_m_pitch / mohaa_m_yaw
                 // cs_m_yaw = 0.022 * mohaa_m_yaw / mohaa_m_pitch
                 csMyawAdj = CS_YAW * mohaaMyaw / mohaaMpitch;
@@ -619,10 +707,6 @@
 
             isMohaaSource = !isMohaaSource;
 
-            direction.innerHTML = isMohaaSource
-                ? 'Converting: <strong>MOHAA → CS</strong>'
-                : 'Converting: <strong>CS → MOHAA</strong>';
-
             const sourceHeader = sourcePanel.querySelector('.game-header');
             const targetHeader = targetPanel.querySelector('.game-header');
 
@@ -633,12 +717,7 @@
                         <div class="game-title">Medal of Honor: Allied Assault</div>\
                         <div class="game-subtitle">Source Game</div>\
                     </div>';
-                targetHeader.innerHTML = '\
-                    <div class="game-icon cs-icon">CS</div>\
-                    <div>\
-                        <div class="game-title">Counter-Strike</div>\
-                        <div class="game-subtitle">Target Game</div>\
-                    </div>';
+                targetHeader.innerHTML = otherGameHeader('Target Game');
                 // Sync MOHAA values from target to source
                 sourceFov.value = targetFov.value;
                 sourceMyaw.value = targetMyaw.value;
@@ -649,12 +728,7 @@
                 sourceCsRow.style.display = 'none';
                 targetCsRow.style.display = 'grid';
             } else {
-                sourceHeader.innerHTML = '\
-                    <div class="game-icon cs-icon">CS</div>\
-                    <div>\
-                        <div class="game-title">Counter-Strike</div>\
-                        <div class="game-subtitle">Source Game</div>\
-                    </div>';
+                sourceHeader.innerHTML = otherGameHeader('Source Game');
                 targetHeader.innerHTML = '\
                     <div class="game-icon mohaa-icon">MOH</div>\
                     <div>\
@@ -675,6 +749,7 @@
             sourceSens.value = previousTargetSens;
             sourceDpi.value = previousTargetDpi;
             targetDpi.value = previousSourceDpi;
+            updateOtherGameUI();
             convert();
         }
 
@@ -706,10 +781,15 @@
         targetMpitch.addEventListener('input', convert);
         sourceCsFov.addEventListener('input', convert);
         targetCsFov.addEventListener('input', convert);
+        otherGameSelect.addEventListener('change', function() {
+            updateOtherGameUI();
+            convert();
+        });
 
         document.getElementById('swap-btn').addEventListener('click', swapGames);
 
         // Initial conversion
+        updateOtherGameUI();
         convert();
     </script>
 </body>
