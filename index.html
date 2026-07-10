@@ -424,6 +424,13 @@
                         <input type="number" id="source-cs-fov" value="90" step="1" min="40" max="140">
                     </div>
                 </div>
+
+                <div class="input-row-single" id="source-bo3-row" style="display: none;">
+                    <div class="input-group">
+                        <label>FOV (effective maximum 115)</label>
+                        <input type="number" id="source-bo3-fov" value="97" step="1" min="65" max="120">
+                    </div>
+                </div>
             </div>
 
             <!-- Swap Button -->
@@ -475,6 +482,13 @@
                         <input type="number" id="target-cs-fov" value="90" step="1" min="40" max="140">
                     </div>
                 </div>
+
+                <div class="input-row-single" id="target-bo3-row" style="display: none;">
+                    <div class="input-group">
+                        <label>FOV (effective maximum 115)</label>
+                        <input type="number" id="target-bo3-fov" value="97" step="1" min="65" max="120">
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -506,7 +520,7 @@
                 <li>cg_fov is horizontal FOV at 4:3. The engine uses Hor+ scaling, so fov_y (and sensitivity) stays the same at any aspect ratio or resolution.</li>
             </ul>
             <p style="margin-top: 15px;"><strong>CS:</strong> Uses a base yaw of 0.022 and scales custom FOV relative to the default 90°. <code>degrees_per_count = sensitivity × 0.022 × (FOV / 90)</code>. This assumes <code>zoom_sensitivity_ratio 1</code>; FOV 90 leaves the sensitivity unchanged.</p>
-            <p style="margin-top: 15px;"><strong>Black Ops 3 (Mac):</strong> Uses the measured hipfire yaw <code>360 / 12579 = 0.0286191271</code> degrees per count per sensitivity unit. The calibration was validated in both directions at sensitivity 1, 800 DPI, and FOV 97; FOV 80 validation is pending.</p>
+            <p style="margin-top: 15px;"><strong>Black Ops 3 (Mac):</strong> Uses the measured hipfire formula <code>degrees_per_count = sensitivity × (360 / 14253) × tan(min(FOV, 115) / 2)</code>. Measurements from FOV 80 through 115 follow tangent half-FOV scaling, and settings above 115 are effectively clamped to 115.</p>
             <p style="margin-top: 15px;"><strong>V/H ratio bypass:</strong> If your MOHAA m_pitch differs from m_yaw, the vertical/horizontal sensitivity ratio won't match in CS (which has m_pitch locked at 0.022). The converter adjusts CS's sensitivity and m_yaw to preserve both your horizontal cm/360 and your V/H ratio.</p>
         </div>
 
@@ -518,9 +532,11 @@
     <script>
         // CS fixed yaw/pitch
         const CS_YAW = 0.022;
-        // Measured on Black Ops 3 for macOS: sensitivity 1 produced exactly
-        // 12,579 counts/360 in both horizontal directions at FOV 97.
-        const BO3_MAC_YAW = 360 / 12579;
+        // Measured on Black Ops 3 for macOS: sensitivity 1 produced 14,253
+        // counts/360 at FOV 90. FOV scaling follows tan(FOV / 2) and the game
+        // effectively clamps settings above 115 to FOV 115.
+        const BO3_MAC_BASE_YAW = 360 / 14253;
+        const BO3_MAC_MAX_FOV = 115;
         const OTHER_GAMES = {
             cs: {
                 shortName: 'CS',
@@ -557,6 +573,8 @@
         const sourceMohaaRow = document.getElementById('source-mohaa-row');
         const sourceCsFov = document.getElementById('source-cs-fov');
         const sourceCsRow = document.getElementById('source-cs-row');
+        const sourceBo3Fov = document.getElementById('source-bo3-fov');
+        const sourceBo3Row = document.getElementById('source-bo3-row');
 
         const targetSens = document.getElementById('target-sens');
         const targetDpi = document.getElementById('target-dpi');
@@ -566,6 +584,8 @@
         const targetMohaaRow = document.getElementById('target-mohaa-row');
         const targetCsFov = document.getElementById('target-cs-fov');
         const targetCsRow = document.getElementById('target-cs-row');
+        const targetBo3Fov = document.getElementById('target-bo3-fov');
+        const targetBo3Row = document.getElementById('target-bo3-row');
 
         const cm360Display = document.getElementById('cm360');
         const direction = document.getElementById('direction');
@@ -612,6 +632,8 @@
 
             sourceCsRow.style.display = !isMohaaSource && otherIsCs ? 'grid' : 'none';
             targetCsRow.style.display = isMohaaSource && otherIsCs ? 'grid' : 'none';
+            sourceBo3Row.style.display = !isMohaaSource && !otherIsCs ? 'grid' : 'none';
+            targetBo3Row.style.display = isMohaaSource && !otherIsCs ? 'grid' : 'none';
         }
 
         // Main conversion function
@@ -640,6 +662,9 @@
             // sensitivity relative to the default 90 when zoom_sensitivity_ratio is 1.
             const csFov = parseFloat(isMohaaSource ? targetCsFov.value : sourceCsFov.value) || 90;
             const csFovScale = csFov / 90.0;
+            const bo3Fov = parseFloat(isMohaaSource ? targetBo3Fov.value : sourceBo3Fov.value) || 97;
+            const bo3EffectiveFov = Math.min(bo3Fov, BO3_MAC_MAX_FOV);
+            const bo3FovScale = Math.tan(bo3EffectiveFov * Math.PI / 360);
 
             // fov_y is independent of resolution/aspect ratio (Hor+ scaling)
             const fovY = calcFovY(mohaaFov);
@@ -651,7 +676,7 @@
             const mohaaEffYaw = mohaaMyaw * zoomScale;
             const otherEffYaw = otherGame === 'cs'
                 ? CS_YAW * csFovScale
-                : BO3_MAC_YAW;
+                : BO3_MAC_BASE_YAW * bo3FovScale;
 
             const srcYaw = isMohaaSource ? mohaaEffYaw : otherEffYaw;
             const tgtYaw = isMohaaSource ? otherEffYaw : mohaaEffYaw;
@@ -725,6 +750,7 @@
                 sourceMohaaRow.style.display = 'grid';
                 targetMohaaRow.style.display = 'none';
                 targetCsFov.value = sourceCsFov.value;
+                targetBo3Fov.value = sourceBo3Fov.value;
                 sourceCsRow.style.display = 'none';
                 targetCsRow.style.display = 'grid';
             } else {
@@ -742,6 +768,7 @@
                 sourceMohaaRow.style.display = 'none';
                 targetMohaaRow.style.display = 'grid';
                 sourceCsFov.value = targetCsFov.value;
+                sourceBo3Fov.value = targetBo3Fov.value;
                 sourceCsRow.style.display = 'grid';
                 targetCsRow.style.display = 'none';
             }
@@ -781,6 +808,8 @@
         targetMpitch.addEventListener('input', convert);
         sourceCsFov.addEventListener('input', convert);
         targetCsFov.addEventListener('input', convert);
+        sourceBo3Fov.addEventListener('input', convert);
+        targetBo3Fov.addEventListener('input', convert);
         otherGameSelect.addEventListener('change', function() {
             updateOtherGameUI();
             convert();
