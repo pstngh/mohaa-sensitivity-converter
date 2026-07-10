@@ -506,7 +506,7 @@
                 <li>cg_fov is horizontal FOV at 4:3. The engine uses Hor+ scaling, so fov_y (and sensitivity) stays the same at any aspect ratio or resolution.</li>
             </ul>
             <p style="margin-top: 15px;"><strong>CS:</strong> Uses a base yaw of 0.022 and scales custom FOV relative to the default 90°. <code>degrees_per_count = sensitivity × 0.022 × (FOV / 90)</code>. This assumes <code>zoom_sensitivity_ratio 1</code>; FOV 90 leaves the sensitivity unchanged.</p>
-            <p style="margin-top: 15px;"><strong>Black Ops 3 (Mac):</strong> Uses the measured hipfire yaw <code>360 / 12579 = 0.0286191271</code> degrees per count per sensitivity unit. The calibration was validated in both directions at sensitivity 1, 800 DPI, and FOV 80.</p>
+            <p style="margin-top: 15px;"><strong>Black Ops 3 (Mac):</strong> Uses the measured hipfire yaw <code>360 / 12579 = 0.0286191271</code> degrees per count per sensitivity unit. The calibration was validated in both directions at sensitivity 1, 800 DPI, and FOV 97; FOV 80 validation is pending.</p>
             <p style="margin-top: 15px;"><strong>V/H ratio bypass:</strong> If your MOHAA m_pitch differs from m_yaw, the vertical/horizontal sensitivity ratio won't match in CS (which has m_pitch locked at 0.022). The converter adjusts CS's sensitivity and m_yaw to preserve both your horizontal cm/360 and your V/H ratio.</p>
         </div>
 
@@ -519,7 +519,7 @@
         // CS fixed yaw/pitch
         const CS_YAW = 0.022;
         // Measured on Black Ops 3 for macOS: sensitivity 1 produced exactly
-        // 12,579 counts/360 in both horizontal directions at FOV 80.
+        // 12,579 counts/360 in both horizontal directions at FOV 97.
         const BO3_MAC_YAW = 360 / 12579;
         const OTHER_GAMES = {
             cs: {
