@@ -237,6 +237,41 @@
             color: #4a9eff;
         }
 
+        .verification-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .verification-item {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .verification-item .result-label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .verification-value {
+            color: #4a9eff;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .verification-error {
+            color: #00ff88;
+        }
+
+        @media (max-width: 768px) {
+            .verification-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .command-box {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 8px;
@@ -418,10 +453,18 @@
                     </div>
                 </div>
 
-                <div class="input-row-single" id="source-cs-row" style="display: none;">
+                <div class="input-row-3" id="source-cs-row" style="display: none;">
                     <div class="input-group">
                         <label>FOV</label>
                         <input type="number" id="source-cs-fov" value="90" step="1" min="40" max="140">
+                    </div>
+                    <div class="input-group">
+                        <label>m_yaw</label>
+                        <input type="number" id="source-cs-myaw" value="0.022" step="0.000001" min="0.0001">
+                    </div>
+                    <div class="input-group">
+                        <label>Zoom Ratio</label>
+                        <input type="number" id="source-cs-zoom-ratio" value="1" step="0.01" min="0.01">
                     </div>
                 </div>
 
@@ -476,10 +519,18 @@
                     </div>
                 </div>
 
-                <div class="input-row-single" id="target-cs-row">
+                <div class="input-row-3" id="target-cs-row">
                     <div class="input-group">
                         <label>FOV</label>
                         <input type="number" id="target-cs-fov" value="90" step="1" min="40" max="140">
+                    </div>
+                    <div class="input-group">
+                        <label>m_yaw (Result)</label>
+                        <input type="number" id="target-cs-myaw" value="0.022" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label>Zoom Ratio</label>
+                        <input type="number" id="target-cs-zoom-ratio" value="1" step="0.01" min="0.01">
                     </div>
                 </div>
 
@@ -494,8 +545,19 @@
 
         <!-- Results Section -->
         <div class="results-section">
-            <div class="result-row">
-                <span class="result-value" id="cm360">-- cm/360°</span>
+            <div class="verification-grid">
+                <div class="verification-item">
+                    <span class="result-label">Horizontal cm/360°</span>
+                    <span class="verification-value" id="cm360">-- → --</span>
+                </div>
+                <div class="verification-item">
+                    <span class="result-label">V/H Ratio</span>
+                    <span class="verification-value" id="vh-ratio">-- → --</span>
+                </div>
+                <div class="verification-item">
+                    <span class="result-label">Horizontal Error</span>
+                    <span class="verification-value verification-error" id="conversion-error">--</span>
+                </div>
             </div>
 
             <div class="command-box" id="mohaa-command">
@@ -504,7 +566,7 @@
             </div>
 
             <div class="command-box" id="cs-command">
-                <span class="command-label" id="other-command-label">CS:</span> <code id="cs-command-text">sensitivity "1"</code><span id="yaw-inline" style="display: none;">; <code id="yaw-command-text">m_yaw "0.022"</code></span>
+                <span class="command-label" id="other-command-label">CS:</span> <code id="cs-command-text">sensitivity "1"</code><span id="yaw-inline" style="display: none;">; <code id="yaw-command-text">m_yaw "0.022"</code></span><span id="zoom-inline" style="display: none;">; <code id="zoom-command-text">zoom_sensitivity_ratio_mouse "1"</code></span>
                 <button class="copy-btn" onclick="copyCsCommand()">Copy</button>
             </div>
         </div>
@@ -519,7 +581,7 @@
                 <li><code>fov_y = 2 × atan(0.75 × tan(cg_fov / 2))</code></li>
                 <li>cg_fov is horizontal FOV at 4:3. The engine uses Hor+ scaling, so fov_y (and sensitivity) stays the same at any aspect ratio or resolution.</li>
             </ul>
-            <p style="margin-top: 15px;"><strong>CS:</strong> Uses a base yaw of 0.022 and scales custom FOV relative to the default 90°. <code>degrees_per_count = sensitivity × 0.022 × (FOV / 90)</code>. This assumes <code>zoom_sensitivity_ratio 1</code>; FOV 90 leaves the sensitivity unchanged.</p>
+            <p style="margin-top: 15px;"><strong>CS:</strong> Uses a base yaw of 0.022. When custom FOV differs from the default 90°, <code>degrees_per_count = sensitivity × m_yaw × (FOV / 90) × zoom_sensitivity_ratio_mouse</code>. At FOV 90 the zoom ratio is not applied.</p>
             <p style="margin-top: 15px;"><strong>Black Ops 3 (Mac):</strong> Uses the measured hipfire formula <code>degrees_per_count = sensitivity × (360 / 14253) × tan(min(FOV, 115) / 2)</code>. Measurements from FOV 80 through 115 follow tangent half-FOV scaling, and settings above 115 are effectively clamped to 115.</p>
             <p style="margin-top: 15px;"><strong>V/H ratio bypass:</strong> If your MOHAA m_pitch differs from m_yaw, the vertical/horizontal sensitivity ratio won't match in CS (which has m_pitch locked at 0.022). The converter adjusts CS's sensitivity and m_yaw to preserve both your horizontal cm/360 and your V/H ratio.</p>
         </div>
@@ -530,8 +592,9 @@
     </div>
 
     <script>
-        // CS fixed yaw/pitch
-        const CS_YAW = 0.022;
+        // CS defaults. m_pitch is treated as locked for the online-safe bypass.
+        const CS_BASE_YAW = 0.022;
+        const CS_PITCH = 0.022;
         // Measured on Black Ops 3 for macOS: sensitivity 1 produced 14,253
         // counts/360 at FOV 90. FOV scaling follows tan(FOV / 2) and the game
         // effectively clamps settings above 115 to FOV 115.
@@ -572,6 +635,8 @@
         const sourceMpitch = document.getElementById('source-mpitch');
         const sourceMohaaRow = document.getElementById('source-mohaa-row');
         const sourceCsFov = document.getElementById('source-cs-fov');
+        const sourceCsMyaw = document.getElementById('source-cs-myaw');
+        const sourceCsZoomRatio = document.getElementById('source-cs-zoom-ratio');
         const sourceCsRow = document.getElementById('source-cs-row');
         const sourceBo3Fov = document.getElementById('source-bo3-fov');
         const sourceBo3Row = document.getElementById('source-bo3-row');
@@ -583,11 +648,15 @@
         const targetMpitch = document.getElementById('target-mpitch');
         const targetMohaaRow = document.getElementById('target-mohaa-row');
         const targetCsFov = document.getElementById('target-cs-fov');
+        const targetCsMyaw = document.getElementById('target-cs-myaw');
+        const targetCsZoomRatio = document.getElementById('target-cs-zoom-ratio');
         const targetCsRow = document.getElementById('target-cs-row');
         const targetBo3Fov = document.getElementById('target-bo3-fov');
         const targetBo3Row = document.getElementById('target-bo3-row');
 
         const cm360Display = document.getElementById('cm360');
+        const vhRatioDisplay = document.getElementById('vh-ratio');
+        const conversionErrorDisplay = document.getElementById('conversion-error');
         const direction = document.getElementById('direction');
         const commandText = document.getElementById('command-text');
         const csCommandText = document.getElementById('cs-command-text');
@@ -595,6 +664,8 @@
         const csCommand = document.getElementById('cs-command');
         const yawInline = document.getElementById('yaw-inline');
         const yawCommandText = document.getElementById('yaw-command-text');
+        const zoomInline = document.getElementById('zoom-inline');
+        const zoomCommandText = document.getElementById('zoom-command-text');
         const otherCommandLabel = document.getElementById('other-command-label');
         const otherGameSelect = document.getElementById('other-game');
 
@@ -636,6 +707,16 @@
             targetBo3Row.style.display = isMohaaSource && !otherIsCs ? 'grid' : 'none';
         }
 
+        function csFovSensitivityScale(fov, zoomRatio) {
+            // CS only applies zoom_sensitivity_ratio_mouse when active FOV differs
+            // from the default FOV. fov_cs_debug follows this same path.
+            return Math.abs(fov - 90) < 0.000001 ? 1 : (fov / 90.0) * zoomRatio;
+        }
+
+        function formatSetting(value, maxDecimals) {
+            return value.toFixed(maxDecimals).replace(/\.?0+$/, '');
+        }
+
         // Main conversion function
         // Based on OpenMoHAA CL_MouseMove() and CG_SensitivityScale():
         //   yaw_delta = m_yaw * sensitivity * (fov_y / 75.0) * mouse_dx
@@ -646,7 +727,7 @@
             const tgtDpi = parseFloat(targetDpi.value) || 800;
             const otherGame = otherGameSelect.value;
 
-            // Read MOHAA values from whichever panel is MOHAA
+            // Read MOHAA values from whichever panel is MOHAA.
             let mohaaFov, mohaaMyaw, mohaaMpitch;
             if (isMohaaSource) {
                 mohaaFov = parseFloat(sourceFov.value) || 80;
@@ -658,56 +739,74 @@
                 mohaaMpitch = parseFloat(targetMpitch.value) || 0.018;
             }
 
-            // Read CS FOV from whichever panel is CS. Custom FOV scales hipfire
-            // sensitivity relative to the default 90 when zoom_sensitivity_ratio is 1.
+            // Read settings from whichever panel contains CS. A custom m_yaw is
+            // meaningful when CS is the source; when CS is the target, the
+            // online-safe V/H bypass derives the result from MOHAA m_pitch.
             const csFov = parseFloat(isMohaaSource ? targetCsFov.value : sourceCsFov.value) || 90;
-            const csFovScale = csFov / 90.0;
+            const csZoomRatio = parseFloat(isMohaaSource ? targetCsZoomRatio.value : sourceCsZoomRatio.value) || 1;
+            const csSourceYaw = isMohaaSource
+                ? CS_BASE_YAW
+                : (parseFloat(sourceCsMyaw.value) || CS_BASE_YAW);
+            const csFovScale = csFovSensitivityScale(csFov, csZoomRatio);
+
             const bo3Fov = parseFloat(isMohaaSource ? targetBo3Fov.value : sourceBo3Fov.value) || 97;
             const bo3EffectiveFov = Math.min(bo3Fov, BO3_MAC_MAX_FOV);
             const bo3FovScale = Math.tan(bo3EffectiveFov * Math.PI / 360);
 
-            // fov_y is independent of resolution/aspect ratio (Hor+ scaling)
+            // fov_y is independent of resolution/aspect ratio (Hor+ scaling).
             const fovY = calcFovY(mohaaFov);
+            const mohaaFovScale = fovY / 75.0;
 
-            // MOHAA zoom sensitivity: fov_y / 75.0 (from CG_SensitivityScale)
-            const zoomScale = fovY / 75.0;
+            // Effective degrees per count per unit sensitivity on each axis.
+            const mohaaEffYaw = mohaaMyaw * mohaaFovScale;
+            const mohaaEffPitch = mohaaMpitch * mohaaFovScale;
+            const bo3EffAxis = BO3_MAC_BASE_YAW * bo3FovScale;
 
-            // Effective yaw per unit of sensitivity (degrees per count per unit sens)
-            const mohaaEffYaw = mohaaMyaw * zoomScale;
-            const otherEffYaw = otherGame === 'cs'
-                ? CS_YAW * csFovScale
-                : BO3_MAC_BASE_YAW * bo3FovScale;
+            let resultCsYaw = csSourceYaw;
+            let otherEffYaw = otherGame === 'cs'
+                ? resultCsYaw * csFovScale
+                : bo3EffAxis;
+            const otherEffPitch = otherGame === 'cs'
+                ? CS_PITCH * csFovScale
+                : bo3EffAxis;
 
             const srcYaw = isMohaaSource ? mohaaEffYaw : otherEffYaw;
-            const tgtYaw = isMohaaSource ? otherEffYaw : mohaaEffYaw;
+            const srcPitch = isMohaaSource ? mohaaEffPitch : otherEffPitch;
+            let tgtYaw = isMohaaSource ? otherEffYaw : mohaaEffYaw;
+            let tgtPitch = isMohaaSource ? otherEffPitch : mohaaEffPitch;
 
-            // cm/360 based on horizontal (yaw) sensitivity
             const srcCm360 = (360 * 2.54) / (srcDpi * srcSens * srcYaw);
-
-            // Target sensitivity to match horizontal cm/360
             let tgtSens = (360 * 2.54) / (srcCm360 * tgtDpi * tgtYaw);
 
-            // V/H ratio bypass (MOHAA→CS only)
-            // If MOHAA m_pitch != m_yaw, adjust CS sensitivity and m_yaw
-            // to preserve both horizontal cm/360 and the V/H ratio.
-            // CS m_pitch is locked at 0.022, so we change m_yaw to compensate.
-            let csMyawAdj = CS_YAW;
-            let needsYawAdj = false;
+            // V/H ratio bypass (MOHAA to CS only). CS m_pitch is treated as
+            // locked at 0.022, so m_yaw and sensitivity preserve both axes.
+            if (isMohaaSource && otherGame === 'cs') {
+                if (Math.abs(mohaaMpitch - mohaaMyaw) > 0.0001) {
+                    resultCsYaw = CS_PITCH * mohaaMyaw / mohaaMpitch;
+                } else {
+                    resultCsYaw = CS_BASE_YAW;
+                }
 
-            if (isMohaaSource && otherGame === 'cs' && Math.abs(mohaaMpitch - mohaaMyaw) > 0.0001) {
-                // To match V/H ratio: cs_m_pitch / cs_m_yaw = mohaa_m_pitch / mohaa_m_yaw
-                // cs_m_yaw = 0.022 * mohaa_m_yaw / mohaa_m_pitch
-                csMyawAdj = CS_YAW * mohaaMyaw / mohaaMpitch;
-                // Adjust sensitivity to maintain horizontal cm/360 with new m_yaw
-                tgtSens = tgtSens * mohaaMpitch / mohaaMyaw;
-                needsYawAdj = true;
+                targetCsMyaw.value = resultCsYaw.toFixed(6);
+                tgtYaw = resultCsYaw * csFovScale;
+                tgtPitch = CS_PITCH * csFovScale;
+                tgtSens = (360 * 2.54) / (srcCm360 * tgtDpi * tgtYaw);
             }
 
-            // Update UI
-            targetSens.value = tgtSens.toFixed(isMohaaSource ? 6 : 3);
-            cm360Display.textContent = srcCm360.toFixed(3) + ' cm/360\u00B0';
+            // Verify the values users will actually copy, including output rounding.
+            const targetPrecision = isMohaaSource ? 6 : 3;
+            const outputTgtSens = parseFloat(tgtSens.toFixed(targetPrecision));
+            const tgtCm360 = (360 * 2.54) / (tgtDpi * outputTgtSens * tgtYaw);
+            const srcVhRatio = srcPitch / srcYaw;
+            const tgtVhRatio = tgtPitch / tgtYaw;
+            const horizontalErrorPct = Math.abs((tgtCm360 / srcCm360 - 1) * 100);
 
-            // Update commands
+            targetSens.value = tgtSens.toFixed(targetPrecision);
+            cm360Display.textContent = srcCm360.toFixed(3) + ' \u2192 ' + tgtCm360.toFixed(3);
+            vhRatioDisplay.textContent = srcVhRatio.toFixed(6) + ' \u2192 ' + tgtVhRatio.toFixed(6);
+            conversionErrorDisplay.textContent = horizontalErrorPct.toFixed(4) + '%';
+
+            // Update commands.
             if (isMohaaSource) {
                 commandText.textContent = 'sensitivity "' + srcSens + '"';
                 csCommandText.textContent = 'sensitivity "' + tgtSens.toFixed(6) + '"';
@@ -716,11 +815,16 @@
                 csCommandText.textContent = 'sensitivity "' + srcSens.toFixed(6) + '"';
             }
 
-            if (needsYawAdj) {
-                yawInline.style.display = 'inline';
-                yawCommandText.textContent = 'm_yaw "' + csMyawAdj.toFixed(6) + '"';
-            } else {
-                yawInline.style.display = 'none';
+            const displayedCsYaw = isMohaaSource ? resultCsYaw : csSourceYaw;
+            const showYawCommand = otherGame === 'cs' && Math.abs(displayedCsYaw - CS_BASE_YAW) > 0.000001;
+            yawInline.style.display = showYawCommand ? 'inline' : 'none';
+            if (showYawCommand) {
+                yawCommandText.textContent = 'm_yaw "' + displayedCsYaw.toFixed(6) + '"';
+            }
+
+            zoomInline.style.display = otherGame === 'cs' ? 'inline' : 'none';
+            if (otherGame === 'cs') {
+                zoomCommandText.textContent = 'zoom_sensitivity_ratio_mouse "' + formatSetting(csZoomRatio, 6) + '"';
             }
         }
 
@@ -750,6 +854,8 @@
                 sourceMohaaRow.style.display = 'grid';
                 targetMohaaRow.style.display = 'none';
                 targetCsFov.value = sourceCsFov.value;
+                targetCsMyaw.value = sourceCsMyaw.value;
+                targetCsZoomRatio.value = sourceCsZoomRatio.value;
                 targetBo3Fov.value = sourceBo3Fov.value;
                 sourceCsRow.style.display = 'none';
                 targetCsRow.style.display = 'grid';
@@ -768,6 +874,8 @@
                 sourceMohaaRow.style.display = 'none';
                 targetMohaaRow.style.display = 'grid';
                 sourceCsFov.value = targetCsFov.value;
+                sourceCsMyaw.value = targetCsMyaw.value;
+                sourceCsZoomRatio.value = targetCsZoomRatio.value;
                 sourceBo3Fov.value = targetBo3Fov.value;
                 sourceCsRow.style.display = 'grid';
                 targetCsRow.style.display = 'none';
@@ -789,8 +897,14 @@
         }
 
         function copyCsCommand() {
-            const text = csCommandText.textContent + (yawInline.style.display !== 'none' ? '; ' + yawCommandText.textContent : '');
-            navigator.clipboard.writeText(text);
+            const parts = [csCommandText.textContent];
+            if (yawInline.style.display !== 'none') {
+                parts.push(yawCommandText.textContent);
+            }
+            if (zoomInline.style.display !== 'none') {
+                parts.push(zoomCommandText.textContent);
+            }
+            navigator.clipboard.writeText(parts.join('; '));
             const btn = csCommand.querySelector('.copy-btn');
             btn.textContent = 'Copied!';
             setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
@@ -807,7 +921,10 @@
         targetMyaw.addEventListener('input', convert);
         targetMpitch.addEventListener('input', convert);
         sourceCsFov.addEventListener('input', convert);
+        sourceCsMyaw.addEventListener('input', convert);
+        sourceCsZoomRatio.addEventListener('input', convert);
         targetCsFov.addEventListener('input', convert);
+        targetCsZoomRatio.addEventListener('input', convert);
         sourceBo3Fov.addEventListener('input', convert);
         targetBo3Fov.addEventListener('input', convert);
         otherGameSelect.addEventListener('change', function() {
